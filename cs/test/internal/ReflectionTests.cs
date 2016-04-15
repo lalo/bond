@@ -31,6 +31,22 @@
             GenericSchemaClassTest<List<string>>();
         }
 
+        [Test]
+        public void FindMethodFromInterface()
+        {
+            IReaderA reader = new ReaderA();
+            Assert.AreEqual("ReadStructBegin", Reflection.FindMethod(reader.GetType().GetInterface("IReaderA"), "ReadStructBegin", new Type[0]).Name);
+        }
+
+        [Test]
+        public void MultipleMethodsImplementedException()
+        {
+            IReaderAB reader = new ReaderAB();
+            Assert.That(() => Reflection.FindMethod(reader.GetType().GetInterface("IReaderAB"), "ReadStructBegin", new Type[0]),
+                Throws.TypeOf<System.Reflection.AmbiguousMatchException>()
+                     .With.Message.Contains("FindMethod found more than one matching method"));
+        }
+
         static Type GetFieldSchemaTypeClass<T>(string name)
         {
             return typeof(Class<T>).GetSchemaFields().Single(
@@ -120,6 +136,41 @@
         // ReSharper disable once RedundantExtendsListEntry
         interface ISubSub : IBase, ISub
         {
+        }
+
+        interface IReaderA
+        {
+            void ReadStructBegin();
+        }
+
+        interface IReaderB
+        {
+            void ReadStructBegin();
+        }
+
+        interface IReaderAB : IReaderA, IReaderB
+        {
+        }
+
+        class ReaderAB : IReaderAB
+        {
+            void IReaderA.ReadStructBegin()
+            {
+                throw new NotImplementedException();
+            }
+
+            void IReaderB.ReadStructBegin()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        class ReaderA : IReaderA
+        {
+            void IReaderA.ReadStructBegin()
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
