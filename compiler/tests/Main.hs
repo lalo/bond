@@ -45,6 +45,9 @@ tests = testGroup "Compiler tests"
     , testGroup "Types"
         [ testCase "type alias resolution" aliasResolution
         ]
+    , testGroup "Codegen Failures"
+        [ testCase "basic types" $ assertException "tusa" (doBond "basic_types2")
+        ]
     , testGroup "Codegen"
         [ testGroup "C++"
             [ verifyCppCodegen "attributes"
