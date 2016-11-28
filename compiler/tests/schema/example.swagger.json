@@ -1,0 +1,1 @@
+{"info":{"version":"version not set","title":"example.bond"},"definitions":{"SomeStruct":{"tag":"SwagStruct","type":"object","required":[],"properties":{"someField":{"type":"number"}}}},"paths":{}}

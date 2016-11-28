@@ -24,6 +24,7 @@ import Data.Aeson.TH
 import Control.Applicative
 import Prelude
 import Language.Bond.Syntax.Types
+import Language.Bond.Syntax.Swagger
 
 -- $aeson
 --
@@ -211,7 +212,7 @@ instance ToJSON Field where
         [ "fieldAttributes" .= fieldAttributes f
         , "fieldOrdinal" .= fieldOrdinal f
         , "fieldModifier" .= fieldModifier f
-        , "fieldType" .= fieldType f 
+        , "fieldType" .= fieldType f
         , "fieldName" .= fieldName f
         , "fieldDefault" .= fieldDefault f
         ]
@@ -268,3 +269,12 @@ $(deriveJSON defaultOptions ''Declaration)
 $(deriveJSON defaultOptions ''Import)
 $(deriveJSON defaultOptions ''Language)
 $(deriveJSON defaultOptions ''Method)
+
+$(deriveJSON defaultOptions ''SwaggerBond)
+$(deriveJSON defaultOptions ''SwagResponse)
+$(deriveJSON defaultOptions ''SwagPost)
+
+$(deriveJSON defaultOptions{fieldLabelModifier = drop 1} ''SwagDeclaration)
+$(deriveJSON defaultOptions{fieldLabelModifier = drop 1} ''SwagProperty)
+$(deriveJSON defaultOptions{fieldLabelModifier = drop 1} ''SwagParameter)
+

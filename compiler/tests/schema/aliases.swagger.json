@@ -1,0 +1,1 @@
+{"info":{"version":"version not set","title":"aliases.bond"},"definitions":{"Foo":{"tag":"SwagStruct","type":"object","required":[],"properties":{"aa":{"type":"array"}}}},"paths":{}}

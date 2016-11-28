@@ -1,0 +1,1 @@
+{"info":{"version":"version not set","title":"generics.bond"},"definitions":{"Foo":{"tag":"SwagStruct","type":"object","required":[],"properties":{"n":{"type":"array"},"t2":{"type":"invalid"}}}},"paths":{}}

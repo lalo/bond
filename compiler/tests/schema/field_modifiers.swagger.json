@@ -1,0 +1,1 @@
+{"info":{"version":"version not set","title":"field_modifiers.bond"},"definitions":{"Foo":{"tag":"SwagStruct","type":"object","required":["r"],"properties":{"o":{"type":"bool"},"r":{"type":"number"},"ro":{"type":"number"}}}},"paths":{}}

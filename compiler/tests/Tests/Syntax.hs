@@ -7,6 +7,7 @@
 module Tests.Syntax
     ( roundtripAST
     , compareAST
+    , compareSwag
     , failBadSyntax
     , aliasResolution
     , verifySchemaDef
@@ -28,6 +29,7 @@ import Test.Tasty.Golden
 import Language.Bond.Syntax.Types
 import Language.Bond.Syntax.Util
 import Language.Bond.Syntax.SchemaDef
+import Language.Bond.Syntax.Swagger
 import IO
 
 derive makeArbitrary ''Attribute
@@ -57,6 +59,13 @@ assertException errMsg action = do
 
 failBadSyntax :: String -> FilePath -> Assertion
 failBadSyntax errMsg file = assertException errMsg (parseBondFile [] $ "tests" </> "schema" </> "error" </> file <.> "bond")
+
+compareSwag :: FilePath -> Assertion
+compareSwag file = do
+    bond <- parseBondFile [] $ "tests" </> "schema" </> file <.> "bond"
+    let swag = translateToSwagger file bond
+    json <- parseSwagFile $ "tests" </> "schema" </> file <.> "swagger.json"
+    assertEqual "" swag json
 
 compareAST :: FilePath -> Assertion
 compareAST file = do

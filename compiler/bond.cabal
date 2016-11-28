@@ -45,11 +45,13 @@ library
                     parsec >= 3.1,
                     scientific >= 0.3.4.6,
                     shakespeare >= 2.0,
-                    text >= 0.11
+                    text >= 0.11,
+                    unordered-containers >= 0.2.6
   ghc-options:      -Wall
   exposed-modules:  Language.Bond.Parser
                     Language.Bond.Util
                     Language.Bond.Syntax.Types
+                    Language.Bond.Syntax.Swagger
                     Language.Bond.Syntax.JSON
                     Language.Bond.Syntax.Util
                     Language.Bond.Syntax.SchemaDef

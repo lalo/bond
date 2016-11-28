@@ -1,0 +1,1 @@
+{"info":{"version":"version not set","title":"inheritance.bond"},"definitions":{"Foo":{"tag":"SwagStruct","type":"object","required":[],"properties":{"x":{"type":"number"}}},"Base":{"tag":"SwagStruct","type":"object","required":[],"properties":{"x":{"type":"number"}}}},"paths":{}}

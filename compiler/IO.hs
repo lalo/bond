@@ -5,6 +5,7 @@ module IO
     ( parseFile
     , parseBondFile
     , parseASTFile
+    , parseSwagFile
     , parseNamespaceMappings
     , parseAliasMappings
     )
@@ -25,6 +26,7 @@ import Text.ParserCombinators.Parsec.Error
 import Text.Printf
 import Language.Bond.Syntax.Types (Bond(..))
 import Language.Bond.Syntax.JSON()
+import Language.Bond.Syntax.Swagger (SwaggerBond(..))
 import Language.Bond.Parser
 import Language.Bond.Codegen.TypeMapping
 
@@ -72,6 +74,14 @@ parseASTFile file = do
             exitFailure
         Right bond -> return bond
 
+parseSwagFile :: FilePath -> IO(SwaggerBond)
+parseSwagFile file = do
+    input <- BL.readFile file
+    case eitherDecode input of
+        Left err -> do
+            putStrLn $ "Error parsing " ++ file ++ ": " ++ show err
+            exitFailure
+        Right swag -> return swag
 
 parseAliasMappings :: [String] -> IO [AliasMapping]
 parseAliasMappings = mapM $

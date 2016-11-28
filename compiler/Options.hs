@@ -57,6 +57,7 @@ data Options
         , output_dir :: FilePath
         , jobs :: Maybe Int
         , runtime_schema :: Bool
+        , swagger_schema :: Bool
         }
       deriving (Show, Data, Typeable)
 
@@ -90,6 +91,7 @@ cs = Cs
 schema :: Options
 schema = Schema
     { runtime_schema = def &= help "Generate Simple JSON representation of runtime schema, aka SchemaDef"
+    , swagger_schema = def &= help "Generate Simple JSON representation of swagger schema"
     } &=
     name "schema" &=
     help "Output the JSON representation of the schema"

@@ -1,0 +1,1 @@
+{"info":{"version":"version not set","title":"bond_meta.bond"},"definitions":{"HasMetaFields":{"tag":"SwagStruct","type":"object","required":[],"properties":{"name":{"type":"string"},"full_name":{"type":"invalid"}}}},"paths":{}}
