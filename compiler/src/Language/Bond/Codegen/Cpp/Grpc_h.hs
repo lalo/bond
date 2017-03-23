@@ -25,9 +25,18 @@ grpc_h :: Maybe String -> MappingContext -> String -> [Import] -> [Declaration] 
 grpc_h export_attribute cpp file imports declarations = ("_grpc.h", [lt|
 #pragma once
 
-#include <bond/comm/services.h>
 #include "#{file}_types.h"
 #{newlineSep 0 includeImport imports}
+
+#include <grpc++/impl/codegen/async_stream.h>
+#include <grpc++/impl/codegen/async_unary_call.h>
+#include <grpc++/impl/codegen/method_handler_impl.h>
+#include <grpc++/impl/codegen/proto_utils.h>
+#include <grpc++/impl/codegen/rpc_method.h>
+#include <grpc++/impl/codegen/service_type.h>
+#include <grpc++/impl/codegen/status.h>
+#include <grpc++/impl/codegen/stub_options.h>
+#include <grpc++/impl/codegen/sync_stream.h>
 
 #{CPP.openNamespace cpp}
     #{doubleLineSep 1 grpc declarations}
@@ -42,292 +51,109 @@ grpc_h export_attribute cpp file imports declarations = ("_grpc.h", [lt|
     request mt = request' (payload mt)
       where
         payload = maybe "void" cppType
-        request' params =  [lt|::bond::comm::payload<#{padLeft}#{params}>|]
-          where
-            paramsText = toLazyText params
-            padLeft = if L.head paramsText == ':' then [lt| |] else mempty
+        request' params =  [lt|#{params}|]
 
     response mt = response' (payload mt)
       where
         payload = maybe "void" cppType
-        response' params =  [lt|::bond::comm::message<#{padLeft}#{params}>|]
-          where
-            paramsText = toLazyText params
-            padLeft = if L.head paramsText == ':' then [lt| |] else mempty
+        response' params =  [lt|#{params}|]
 
-    callback m = [lt|const std::function<void (const #{response m}&)>& callback|]
+    grpc s@Service {..} = [lt|class #{declName} final {
+ public:
+  class StubInterface {
+   public:
+    virtual ~StubInterface() {}
+    // Sends a greeting
+    virtual ::grpc::Status SayHello(::grpc::ClientContext* context, const #{request}& request, #{response}* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< #{response}>> AsyncSayHello(::grpc::ClientContext* context, const #{request}& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< #{response}>>(AsyncSayHelloRaw(context, request, cq));
+    }
+  private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< #{response}>* AsyncSayHelloRaw(::grpc::ClientContext* context, const #{request}& request, ::grpc::CompletionQueue* cq) = 0;
+  };
+  class Stub final : public StubInterface {
+   public:
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    ::grpc::Status SayHello(::grpc::ClientContext* context, const #{request}& request, #{response}* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< #{response}>> AsyncSayHello(::grpc::ClientContext* context, const #{request}& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< #{response}>>(AsyncSayHelloRaw(context, request, cq));
+    }
 
-    grpc s@Service {..} = [lt|#{template}class #{declName}
-    {
-    public:
-        virtual ~#{declName}() = default;
+   private:
+    std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    ::grpc::ClientAsyncResponseReader< #{response}>* AsyncSayHelloRaw(::grpc::ClientContext* context, const #{request}& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::RpcMethod rpcmethod_SayHello_;
+  };
+  static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
-        #{doubleLineSep 2 virtualMethod serviceMethods}
-
-        struct Schema;
-        class Proxy;
-
-        template <template <typename> class Promise>
-        class Using;
-    };
-
-    #{template}struct #{className}::Schema
-    {
-        #{export_attr}static const ::bond::Metadata metadata;
-
-        #{newlineSep 2 methodMetadata serviceMethods}
-
-        public: struct service
-        {
-            #{doubleLineSep 3 methodTemplate serviceMethods}
-        };
-
-        private: typedef boost::mpl::list<> methods0;
-        #{newlineSep 2 pushMethod indexedMethods}
-
-        public: typedef #{typename}methods#{length serviceMethods}::type methods;
-        #{constructor}
-    };
-    #{onlyTemplate $ CPP.schemaMetadata cpp s}
-
-    #{template}class #{className}::Proxy
-        : public #{className}
-    {
-    public:
-        template <typename ServiceProxy>
-        explicit
-        Proxy(const ServiceProxy& proxy,
-              const std::string& name = #{className}::Schema::metadata.qualified_name)
-            : _impl(boost::make_shared<__Impl<ServiceProxy>>(proxy, name))
-        {}
-
-        explicit
-        Proxy(const boost::shared_ptr<#{className}>& service)
-            : _impl(service)
-        {}
-
-        Proxy() = default;
-
-        #{doubleLineSep 2 proxyMethod serviceMethods}
-
-        template <template <typename> class Promise>
-        class Using;
-
-    protected:
-        boost::shared_ptr<#{className}> _impl;
-
-        template <typename ServiceProxy>
-        class __Impl
-            : public #{className}
-        {
-        public:
-            __Impl(const ServiceProxy& proxy, const std::string& name)
-                : _proxy(proxy),
-                  _name(name)
-            {}
-
-            virtual ~__Impl() = default;
-
-            #{doubleLineSep 3 implMethod serviceMethods}
-
-        private:
-            ServiceProxy _proxy;
-            const std::string _name;
-        };
-    };
-
-    #{template}template <template <typename> class Promise>
-    class #{className}::Using
-        : public #{className}
-    {
-    public:
-        #{doubleLineSep 2 virtualFutureMethod serviceMethods}
-
-        #{doubleLineSep 2 serviceMethod serviceMethods}
-    };
-
-    #{template}template <template <typename> class Promise>
-    class #{className}::Proxy::Using
-        : public #{className}::Proxy
-    {
-    public:
-        template <typename ServiceProxy>
-        explicit
-        Using(const ServiceProxy& proxy,
-              const std::string& name = #{className}::Schema::metadata.qualified_name)
-            : #{className}::Proxy(proxy, name)
-        {}
-
-        explicit
-        Using(const boost::shared_ptr<#{className}>& service)
-            : #{className}::Proxy(service)
-        {}
-
-        Using() = default;
-
-        #{doubleLineSep 2 proxyFutureMethod serviceMethods}
-    };
-    |]
-      where
-        className = CPP.className s
-        template = CPP.template s
-        onlyTemplate x = if null declParams then mempty else x
-        typename = onlyTemplate [lt|typename |]
-
-        export_attr = optional (\a -> [lt|#{a}
-        |]) export_attribute
-
-        methodMetadataVar m = [lt|s_#{methodName m}_metadata|]
-
-        methodMetadata m =
-            [lt|private: #{export_attr}static const ::bond::Metadata #{methodMetadataVar m};|]
-
-        -- reversed list of method names zipped with indexes
-        indexedMethods :: [(String, Int)]
-        indexedMethods = zipWith ((,) . methodName) (reverse serviceMethods) [0..]
-
-        pushMethod (method, i) =
-            [lt|private: typedef #{typename}boost::mpl::push_front<methods#{i}, #{typename}service::#{method}>::type methods#{i + 1};|]
-
-        -- constructor, generated only for service templates
-        constructor = onlyTemplate [lt|
-            Schema()
-            {
-                // Force instantiation of template statics
-                (void)metadata;
-                #{newlineSep 4 static serviceMethods}
-            }|]
-          where
-            static m = [lt|(void)#{methodMetadataVar m};|]
-
-        methodTemplate m = [lt|typedef ::bond::reflection::MethodTemplate<
-                #{className},
-                #{request $ methodInput m},
-                #{result m},
-                &#{className}::#{methodName m},
-                &#{methodMetadataVar m}
-            > #{methodName m};|]
-          where
-            result Event{} = "void"
-            result Function{..} = response methodResult
-
-        methodSignature n m =
-            [lt|void #{methodName m}(#{commaLineSep n id $ methodParams m})|]
-          where
-            methodParams Event{..} =
-                [ [lt|const #{request methodInput}& input|]
-                ]
-
-            methodParams Function{..} =
-                [ [lt|const #{request methodInput}& input|]
-                , callback methodResult
-                ]
-
-        resultOf x f = [lt|decltype(std::declval< #{x}>().#{f}())|]
-
-        promiseType result = [lt|Promise< #{response result}>|]
-
-        futureType result = resultOf (promiseType result) get_future
-          where
-            get_future = [lt|get_future|]
-
-        methodFutureSignature Function{..} =
-            [lt|auto #{methodName}(const #{request methodInput}& input)
-            -> #{futureType methodResult}|]
-        methodFutureSignature Event{..} = error "No future-based signature for Event methods"
-
-        virtualMethod m = [lt|virtual #{methodSignature 3 m} = 0;|]
-
-        virtualFutureMethod Event{} = mempty
-        virtualFutureMethod m = [lt|virtual #{methodFutureSignature m} = 0;|]
-
-        serviceMethod Event{} = mempty
-        serviceMethod m@Function{..} = [lt|#{methodSignature 3 m} override
-        {
-            when(#{methodName}(input), ::bond::comm::Continuation(callback));
-        }|]
-
-        proxyMethod m@Event{..} = [lt|#{methodSignature 3 m} override
-        {
-            _impl->#{methodName}(input);
-        }#{proxyMethodOverload methodInput}|]
-          where
-            proxyMethodOverload Nothing = [lt|
-
-        void #{methodName}()
-        {
-            _impl->#{methodName}(::bond::comm::payload<void>());
-        }|]
-            proxyMethodOverload (Just payload) | isStruct payload = [lt|
-
-        void #{methodName}(const #{cppType payload}& input)
-        {
-            _impl->#{methodName}(boost::cref(input));
-        }|]
-            proxyMethodOverload _ = mempty
-
-        proxyMethod m@Function{..} = [lt|#{methodSignature 3 m} override
-        {
-            _impl->#{methodName}(input, callback);
-        }#{proxyMethodOverload methodInput}|]
-          where
-            proxyMethodOverload Nothing = [lt|
-
-        void #{methodName}(
-            #{callback methodResult})
-        {
-            _impl->#{methodName}(::bond::comm::payload<void>(), callback);
-        }|]
-            proxyMethodOverload (Just payload) | isStruct payload = [lt|
-
-        void #{methodName}(const #{cppType payload}& input,
-            #{callback methodResult})
-        {
-            _impl->#{methodName}(boost::cref(input), callback);
-        }|]
-            proxyMethodOverload _ = mempty
-
-        proxyFutureMethod Event{} = mempty
-        proxyFutureMethod m@Function{..} = [lt|using #{className}::Proxy::#{methodName};
-
-        #{methodFutureSignature m}
-        {
-            auto promise = boost::make_shared<#{promiseType methodResult}>();
-
-            _impl->#{methodName}(input,
-                [=](const #{response methodResult}& result) mutable
-                {
-                    promise->set_value(result);
-                });
-
-            return promise->get_future();
-        }#{proxyMethodOverload methodInput}|]
-          where
-            proxyMethodOverload Nothing = [lt|
-
-        auto #{methodName}()
-            -> #{futureType methodResult}
-        {
-            return #{methodName}(::bond::comm::payload<void>());
-        }|]
-            proxyMethodOverload (Just payload) | isStruct payload = [lt|
-
-        auto #{methodName}(const #{cppType payload}& input)
-            -> #{futureType methodResult}
-        {
-            return #{methodName}(#{request methodInput}(boost::cref(input)));
-        }
-        |]
-            proxyMethodOverload _ = mempty
-
-        implMethod m@Event{..} = [lt|#{methodSignature 4 m} override
-            {
-                _proxy.Send(_name, Schema::service::#{methodName}::metadata.name, input);
-            }|]
-
-        implMethod m@Function{..} = [lt|#{methodSignature 4 m} override
-            {
-                _proxy.Send(_name, Schema::service::#{methodName}::metadata.name, input, callback);
-            }|]
+  class Service : public ::grpc::Service {
+   public:
+    Service();
+    virtual ~Service();
+    // Sends a greeting
+    virtual ::grpc::Status SayHello(::grpc::ServerContext* context, const #{request}* request, #{response}* response);
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_SayHello : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithAsyncMethod_SayHello() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_SayHello() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SayHello(::grpc::ServerContext* context, const #{request}* request, #{response}* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestSayHello(::grpc::ServerContext* context, #{request}* request, ::grpc::ServerAsyncResponseWriter< #{response}>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_SayHello<Service > AsyncService;
+  template <class BaseClass>
+  class WithGenericMethod_SayHello : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithGenericMethod_SayHello() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_SayHello() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status SayHello(::grpc::ServerContext* context, const #{request}* request, #{response}* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_SayHello : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithStreamedUnaryMethod_SayHello() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::StreamedUnaryHandler< #{request}, #{response}>(std::bind(&WithStreamedUnaryMethod_SayHello<BaseClass>::StreamedSayHello, this, std::placeholders::_1, std::placeholders::_2)));
+    }
+    ~WithStreamedUnaryMethod_SayHello() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status SayHello(::grpc::ServerContext* context, const #{request}* request, #{response}* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedSayHello(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< #{request},#{response}>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_SayHello<Service > StreamedUnaryService;
+  typedef Service SplitStreamedService;
+  typedef WithStreamedUnaryMethod_SayHello<Service > StreamedService;
+};|]
 
     grpc _ = mempty

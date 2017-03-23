@@ -20,7 +20,15 @@ grpc_cpp :: MappingContext -> String -> [Import] -> [Declaration] -> (String, Te
 grpc_cpp cpp file _imports declarations = ("_grpc.cpp", [lt|
 #include "#{file}_reflection.h"
 #include "#{file}_grpc.h"
-#include <bond/core/exception.h>
+
+#include <grpc++/impl/codegen/async_stream.h>
+#include <grpc++/impl/codegen/async_unary_call.h>
+#include <grpc++/impl/codegen/channel_interface.h>
+#include <grpc++/impl/codegen/client_unary_call.h>
+#include <grpc++/impl/codegen/method_handler_impl.h>
+#include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpc++/impl/codegen/service_type.h>
+#include <grpc++/impl/codegen/sync_stream.h>
 
 #{CPP.openNamespace cpp}
     #{doubleLineSepEnd 1 statics declarations}
