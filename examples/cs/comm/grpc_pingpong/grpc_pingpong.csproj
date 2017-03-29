@@ -34,18 +34,16 @@
     </Reference>
     <Reference Include="Grpc.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d754f35622e28bad, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\cs\packages\Grpc.Core.1.1.0\lib\net45\Grpc.Core.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Interactive.Async, Version=3.0.1000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\cs\packages\System.Interactive.Async.3.1.1\lib\net45\System.Interactive.Async.dll</HintPath>
-      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DoublePingService.cs" />
     <Compile Include="GrpcPingPong.cs" />
     <Compile Include="PingPongService.cs" />
-    <Compile Include="DoublePingService.cs" />
     <BondCodegen Include="pingpong.bond">
       <Options>--grpc</Options>
     </BondCodegen>

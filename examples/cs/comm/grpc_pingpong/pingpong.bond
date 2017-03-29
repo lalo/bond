@@ -14,9 +14,9 @@ struct PingResponse
     0: string Payload;
 }
 
-service PingPong<Token>
+service PingPong<RequestType>
 {
-    PingResponse Ping(Token);
+    PingResponse Ping(RequestType);
 }
 
 service DoublePing
@@ -25,10 +25,9 @@ service DoublePing
 
     PingResponse PingNoPayload();
 
-    nothing PongNoResponse(PingRequest);
+    nothing PingNoResponse(PingRequest);
 
     void PingVoid();
 
-    // PingUltra not implemented, should throw exception
-    PingResponse PingUltra(PingRequest);
+    PingResponse PingShouldThrow(PingRequest);
 }

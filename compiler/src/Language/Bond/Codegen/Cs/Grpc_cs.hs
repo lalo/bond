@@ -77,9 +77,9 @@ namespace #{csNamespace}
     }
 |]
       where
+        methodNames = map methodName serviceMethods
+
         uniqImplName name = uniqueName (name ++ "_impl") methodNames
-          where
-            methodNames = map methodName serviceMethods
 
         getMessageTypeName t = maybe "global::Bond.Void" (getTypeName cs) t
 

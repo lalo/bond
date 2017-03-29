@@ -6,13 +6,13 @@ namespace Bond.Grpc
     using System;
 
     /// <summary>
-    /// Interface representing a Bond message of specific payload type.
+    /// Interface representing a Bond message of a specific payload type.
     /// </summary>
     /// <typeparam name="T">The type of the message payload.</typeparam>
     public interface IMessage<out T>
     {
         /// <summary>
-        /// Gets the payload as a <see cref="IBonded{T}">IBonded&lt;T&gt;</see>
+        /// Gets the payload as an <see cref="IBonded{T}">IBonded&lt;T&gt;</see>
         /// value.
         /// </summary>
         IBonded<T> Payload { get; }
@@ -76,7 +76,7 @@ namespace Bond.Grpc
 
         /// <summary>
         /// Creates an <see cref="IBonded{T}">IBonded&lt;T&gt;</see> instance backed by <paramref name="payload"/>,
-        /// where <code>T</code> is determined by the actual runtime type of <paramref name="payload"/>. This helps
+        /// where <c>T</c> is determined by the actual runtime type of <paramref name="payload"/>. This helps
         /// avoid unintended slicing to <typeparamref name="TMessage"/> if <paramref name="payload"/> is derived from
         /// <typeparamref name="TMessage"/> instead of being a <typeparamref name="TMessage"/>.
         /// </summary>

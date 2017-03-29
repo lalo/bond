@@ -34,7 +34,7 @@ namespace Examples.GrpcPingPong
             return Message.From(response);
         }
 
-        public override async void PongNoResponse(IMessage<PingRequest> param, ServerCallContext context)
+        public override async void PingNoResponse(IMessage<PingRequest> param, ServerCallContext context)
         {
             PingRequest request = param.Payload.Deserialize();
 
@@ -44,7 +44,7 @@ namespace Examples.GrpcPingPong
                 await Task.Delay(delayMs);
             }
 
-            Console.WriteLine("PongNoResponse: Notified server-side");
+            Console.WriteLine("PingNoResponse: Notified server-side");
         }
 
         public override async Task<IMessage<Bond.Void>> PingVoid(IMessage<Bond.Void> v, ServerCallContext context)
@@ -56,10 +56,9 @@ namespace Examples.GrpcPingPong
             return Message.Void;
         }
 
-        public override Task<IMessage<PingResponse>> PingUltra(IMessage<PingRequest> param, ServerCallContext context)
+        public override Task<IMessage<PingResponse>> PingShouldThrow(IMessage<PingRequest> param, ServerCallContext context)
         {
             throw new RpcException(new Status(StatusCode.Unimplemented, "Not implemented yet"));
         }
-
     }
 }

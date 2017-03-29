@@ -12,32 +12,21 @@ namespace Examples.GrpcPingPong
     public static class GrpcPingPong
     {
         const int PingPort = 50051;
-        const int DoublePingPort = 15005;
 
         static Server pingServer;
-        static Server doubleServer;
 
         static Channel pingChannel;
-        static Channel doubleChannel;
 
         public static void Main()
         {
             pingServer = new Server
             {
-                Services = { PingPong<PingRequest>.BindService(new PingPongService()) },
+                Services = { PingPong<PingRequest>.BindService(new PingPongService()), DoublePing.BindService(new DoublePingService()) },
                 Ports = { new ServerPort("localhost", PingPort, ServerCredentials.Insecure) }
             };
             pingServer.Start();
 
-            doubleServer = new Server
-            {
-                Services = { DoublePing.BindService(new DoublePingService()) },
-                Ports = { new ServerPort("localhost", DoublePingPort, ServerCredentials.Insecure) }
-            };
-            doubleServer.Start();
-
             pingChannel = new Channel("localhost", PingPort, ChannelCredentials.Insecure);
-            doubleChannel = new Channel("localhost", DoublePingPort, ChannelCredentials.Insecure);
 
             var tasks = MakeRequestsAndPrintAsync(5);
 
@@ -50,13 +39,13 @@ namespace Examples.GrpcPingPong
 
         private static void Shutdown()
         {
-            Task.WaitAll(pingServer.ShutdownAsync(), doubleServer.ShutdownAsync(), pingChannel.ShutdownAsync(), doubleChannel.ShutdownAsync());
+            Task.WaitAll(pingServer.ShutdownAsync(), pingChannel.ShutdownAsync());
         }
 
         private static Task[] MakeRequestsAndPrintAsync(int numRequests)
         {
             var pingClient = new PingPong<PingRequest>.PingPongClient(pingChannel);
-            var doublePingClient = new DoublePing.DoublePingClient(doubleChannel);
+            var doublePingClient = new DoublePing.DoublePingClient(pingChannel);
 
             var tasks = new Task[2 * numRequests];
 
@@ -88,7 +77,8 @@ namespace Examples.GrpcPingPong
 
             try
             {
-                IMessage<PingResponse> responseUltra = await client.PingUltraAsync(request);
+                IMessage<PingResponse> responseShouldThrow = await client.PingShouldThrowAsync(request);
+                Console.WriteLine($"Request #{requestNum} response: \"{responseShouldThrow.Payload.Deserialize().Payload}\". Delay: {delay}");
             }
             catch (RpcException e)
             {
@@ -103,7 +93,7 @@ namespace Examples.GrpcPingPong
             Console.WriteLine($"Request #{requestNum} response: \"{responsePingNoPayload.Payload.Deserialize().Payload}\".");
 
             await client.PingVoidAsync();
-            client.PongNoResponseAsync(request);
+            client.PingNoResponseAsync(request);
         }
     }
 }

@@ -31,7 +31,7 @@ different versioning scheme, following the Haskell community's
       `ProtocolReader` and `ProtocolWriter` to permit mixing and matching of
       reader/writer protocols without having to explicitly compute the full
       cross product.
-* Add flags to pick and choose which C# files to codegen (structs, gRPC and comm).
+* Add gbc flags to pick which C# files to generate (structs, gRPC, and comm).
 
 ### C++ ###
 
@@ -61,7 +61,7 @@ different versioning scheme, following the Haskell community's
 
 ## C# ###
 
-* Added gRPC integration
+* Added gRPC integration. See [Bond-over-gRPC manual](https://microsoft.github.io/bond/manual/bond_over_grpc.html).
 * Added controls to cap incremental allocation between reads in
   `Bond.IO.Unsafe.InputStream`.
 * Extended fix for bug parsing JSON when a string value is a date.
@@ -81,7 +81,10 @@ different versioning scheme, following the Haskell community's
 
 ### C# Comm ###
 
-* C# Comm now deprecated, use Bond-over-gRPC.
+* C# Comm is now deprecated. We recommend that you use Bond-over-gRPC.
+  See [Bond-over-gRPC manual](https://microsoft.github.io/bond/manual/bond_over_grpc.html).
+* To generate C# Comm files be sure to pass --comm flag to gbc.
+  See [example](https://github.com/Microsoft/bond/blob/master/examples/cs/comm/pingpong/pingpong.csproj#L39).
 * EpoxyListener's StopAsync() now stops all the outstanding connections that
   it accepted.
 * EpoxyTransport's StopAsync() now stops all the connections and listeners
