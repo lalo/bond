@@ -21,22 +21,25 @@ grpc_cpp cpp file _imports declarations = ("_grpc.cpp", [lt|
 #include "#{file}_reflection.h"
 #include "#{file}_grpc.h"
 
-#include <grpc++/impl/codegen/async_stream.h>
+//#include <grpc++/impl/codegen/async_stream.h>
 #include <grpc++/impl/codegen/async_unary_call.h>
 #include <grpc++/impl/codegen/channel_interface.h>
 #include <grpc++/impl/codegen/client_unary_call.h>
 #include <grpc++/impl/codegen/method_handler_impl.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
 #include <grpc++/impl/codegen/service_type.h>
-#include <grpc++/impl/codegen/sync_stream.h>
+//#include <grpc++/impl/codegen/sync_stream.h>
 
 #{CPP.openNamespace cpp}
-    #{doubleLineSepEnd 1 statics declarations}
+#{doubleLineSep 1 grpc declarations}
 #{CPP.closeNamespace cpp}
 |])
   where
-    -- definitions of Schema statics for non-generic services
-    statics s@Service {..} =
-        if null declParams then CPP.schemaMetadata cpp s else mempty
+    grpc s@Service {..} = [lt|
+static const char* #{declName}_method_names[] = {
+  "/helloworld.Greeter/SayHello",
+};
+|]
+      where
 
-    statics _ = mempty
+    grpc _ = mempty
