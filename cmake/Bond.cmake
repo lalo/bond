@@ -67,9 +67,14 @@ function (add_bond_codegen)
     elseif()
         set(gbc "")
     endif()
+    if (arg_COMM)
+        set(enable_comm "--comm")
+    elseif()
+        set(enable_comm "")
+    endif()
     add_custom_command(
         OUTPUT ${outputs}
-        COMMAND ${GBC_EXECUTABLE} c++ ${options} ${inputs}
+        COMMAND ${GBC_EXECUTABLE} c++ ${enable_comm} ${options} ${inputs}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${inputs} ${gbc} ${GBC_EXECUTABLE})
     if (arg_TARGET)
