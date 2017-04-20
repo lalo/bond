@@ -12,9 +12,9 @@ import Prelude
 import qualified Data.Text.Lazy as L
 import Data.Text.Lazy.Builder
 import Text.Shakespeare.Text
-import Language.Bond.Util
+-- import Language.Bond.Util
 import Language.Bond.Syntax.Types
-import Language.Bond.Syntax.Util
+-- import Language.Bond.Syntax.Util
 import Language.Bond.Codegen.Util
 import Language.Bond.Codegen.TypeMapping
 import qualified Language.Bond.Codegen.Cpp.Util as CPP
@@ -23,10 +23,13 @@ import qualified Language.Bond.Codegen.Cpp.Util as CPP
 -- | Codegen template for generating /base_name/_grpc.h containing declarations of
 -- of service interface and proxy.
 grpc_h :: Maybe String -> MappingContext -> String -> [Import] -> [Declaration] -> (String, L.Text)
-grpc_h export_attribute cpp file imports declarations = ("_grpc.h", [lt|
+grpc_h _ cpp file imports declarations = ("_grpc.h", [lt|
 #pragma once
 
+#include "#{file}_reflection.h"
 #include "#{file}_types.h"
+#include <bond/comm/message.h>
+#include <bond/comm/bond_utils.h>
 #{newlineSep 0 includeImport imports}
 
 //?#include <grpc++/impl/codegen/async_stream.h>
@@ -52,7 +55,7 @@ grpc_h export_attribute cpp file imports declarations = ("_grpc.h", [lt|
     request mt = request' (payload mt)
       where
         payload = maybe "void" cppType
-        request' params =  [lt|::bond::comm::payload<#{padLeft}#{params}>|]
+        request' params =  [lt|::bond::comm::message<#{padLeft}#{params}>|]
           where
             paramsText = toLazyText params
             padLeft = if L.head paramsText == ':' then [lt| |] else mempty
@@ -65,7 +68,7 @@ grpc_h export_attribute cpp file imports declarations = ("_grpc.h", [lt|
             paramsText = toLazyText params
             padLeft = if L.head paramsText == ':' then [lt| |] else mempty
 
-    grpc s@Service {..} = [lt|
+    grpc Service {..} = [lt|
 class #{declName} final {
  public:
   class StubInterface {

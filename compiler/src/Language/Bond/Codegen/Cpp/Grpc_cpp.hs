@@ -44,7 +44,7 @@ grpc_cpp cpp file _imports declarations = ("_grpc.cpp", [lt|
     request mt = request' (payload mt)
       where
         payload = maybe "void" cppType
-        request' params =  [lt|::bond::comm::payload<#{padLeft}#{params}>|]
+        request' params =  [lt|::bond::comm::message<#{padLeft}#{params}>|]
           where
             paramsText = toLazyText params
             padLeft = if L.head paramsText == ':' then [lt| |] else mempty
@@ -110,7 +110,7 @@ std::unique_ptr< #{declName}::Stub> #{declName}::NewStub(const std::shared_ptr< 
 |]
         addMethod Event{..} = [lt|"",|]
 
-        methodDeclImpl Function{..} = [lt|::grpc::Status #{declName}::Service::#{methodName}(::grpc::ServerContext* context, const #{request methodInput}& request, #{response methodResult}* response) {
+        methodDeclImpl Function{..} = [lt|::grpc::Status #{declName}::Service::#{methodName}(::grpc::ServerContext* context, const #{request methodInput}* request, #{response methodResult}* response) {
   (void) context;
   (void) request;
   (void) response;
