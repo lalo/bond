@@ -29,7 +29,7 @@ grpc_h _ cpp file imports declarations = ("_grpc.h", [lt|
 #include "#{file}_reflection.h"
 #include "#{file}_types.h"
 #include <bond/comm/message.h>
-#include <bond/comm/bond_utils.h>
+#include <bond/ext/grpc/bond_utils.h>
 #{newlineSep 0 includeImport imports}
 
 //?#include <grpc++/impl/codegen/async_stream.h>
