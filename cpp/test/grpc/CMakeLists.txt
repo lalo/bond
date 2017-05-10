@@ -7,8 +7,8 @@ function (add_unit_test)
     add_bond_test (${name} EXCLUDE_FROM_ALL ${files} COMM)
     add_target_to_folder (${name})
     add_dependencies (${name}
-        bond
-        grpc_test_codegen)
+        bond)
+        # grpc_test_codegen)
     target_include_directories (${name} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR})
@@ -30,15 +30,15 @@ endfunction()
 
 
 # Build common code into its own library.
-add_library (grpc_test_common EXCLUDE_FROM_ALL "main.cpp" "idl.cpp")
+add_library (grpc_test_common EXCLUDE_FROM_ALL "main.cpp")
 add_target_to_folder (grpc_test_common)
-add_dependencies(grpc_test_common grpc_test_codegen)
+# add_dependencies(grpc_test_common grpc_test_codegen)
 target_include_directories (grpc_test_common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR})
 target_link_libraries (grpc_test_common PRIVATE
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
-add_bond_codegen (TARGET grpc_test_codegen grpc_test_common.bond COMM)
+# add_bond_codegen (TARGET grpc_test_codegen grpc_test_common.bond GRPC)
 
 add_unit_test (thread_pool.cpp)
