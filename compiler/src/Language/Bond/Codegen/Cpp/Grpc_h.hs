@@ -29,8 +29,11 @@ grpc_h _ cpp file imports declarations = ("_grpc.h", [lt|
 #include "#{file}_reflection.h"
 #include "#{file}_types.h"
 #include <bond/comm/message.h>
-#include <bond/ext/grpc/bond_utils.h>
 #{newlineSep 0 includeImport imports}
+
+#pragma warning (push)
+#pragma warning (disable: 4100 4267)
+#include <bond/ext/grpc/bond_utils.h>
 
 //?#include <grpc++/impl/codegen/async_stream.h>
 #include <grpc++/impl/codegen/async_unary_call.h>
@@ -46,6 +49,8 @@ grpc_h _ cpp file imports declarations = ("_grpc.h", [lt|
 #{doubleLineSep 1 grpc declarations}
 
 #{CPP.closeNamespace cpp}
+
+#pragma warning (pop)
 |])
   where
     includeImport (Import path) = [lt|#include "#{dropExtension path}_grpc.h"|]
