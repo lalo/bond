@@ -7,18 +7,20 @@
 
 // TODO: move unit_test_framework.h to cpp/test/inc
 #include "../core/unit_test_framework.h"
+#include "test_utils_grpc.h"
 
 #include <boost/chrono.hpp>
+#include <atomic>
 #include <functional>
-#include <mutex>
 
 class BasicThreadPoolTests
 {
     static
-    void addOne(int* i)
+    void addOne(int* i, Event* event)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         (*i)++;
+        event->set();
     }
 
     static
@@ -26,12 +28,13 @@ class BasicThreadPoolTests
     {
         bond::ext::thread_pool threads(1);
         int sum = 0;
+        Event sum_event;
 
-        std::function<void(int*)> f_addOne = addOne;
+        std::function<void(int*, Event*)> f_addOne = addOne;
 
-        threads.schedule(std::bind(f_addOne, &sum));
+        threads.schedule(std::bind(f_addOne, &sum, &sum_event));
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        sum_event.wait(std::chrono::seconds(30));
 
         UT_AssertIsTrue(sum == 1);
     }
@@ -39,36 +42,21 @@ class BasicThreadPoolTests
     static
     void FinishAllTasksAfterDelete()
     {
-        bond::ext::thread_pool* threads = new bond::ext::thread_pool(2);
-        int sum = 0;
-        std::mutex sum_mutex;
+        std::unique_ptr<bond::ext::thread_pool> threads(new bond::ext::thread_pool(2));
+        std::atomic<int> sum(0);
 
-        threads->schedule([&sum, &sum_mutex](){
+        auto increment = [&sum](){
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            std::lock_guard<std::mutex> lock(sum_mutex);
             sum++;
-        });
+        };
 
-        threads->schedule([&sum, &sum_mutex](){
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            std::lock_guard<std::mutex> lock(sum_mutex);
-            sum++;
-        });
-
-        threads->schedule([&sum, &sum_mutex](){
-            std::this_thread::sleep_for(std::chrono::milliseconds(300));
-            std::lock_guard<std::mutex> lock(sum_mutex);
-            sum++;
-        });
-
-        threads->schedule([&sum, &sum_mutex](){
-            std::this_thread::sleep_for(std::chrono::milliseconds(400));
-            std::lock_guard<std::mutex> lock(sum_mutex);
-            sum++;
-        });
+        threads->schedule(increment);
+        threads->schedule(increment);
+        threads->schedule(increment);
+        threads->schedule(increment);
 
         // blocks until all schedule tasks are finished
-        delete threads;
+        threads.reset();
 
         UT_AssertIsTrue(sum == 4);
     }
@@ -78,8 +66,7 @@ public:
     static
     void Initialize()
     {
-        std::string name = "ThreadPool";
-        UnitTestSuite suite(name.c_str());
+        UnitTestSuite suite("ThreadPool");
 
         suite.AddTestCase(UseStdFunction, "UseStdFunction");
         suite.AddTestCase(FinishAllTasksAfterDelete, "FinishAllTasksAfterDelete");

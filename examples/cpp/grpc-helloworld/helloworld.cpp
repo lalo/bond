@@ -1,6 +1,5 @@
 #include "helloworld_types.h"
 #include "helloworld_grpc.h"
-#include <bond/ext/grpc/thread_pool.h>
 
 #pragma warning (push)
 #pragma warning (disable: 4100)
@@ -66,9 +65,7 @@ class GreeterServiceImpl final : public Greeter::Service {
 
 int main()
 {
-    bond::ext::thread_pool threads(2);
-
-    std::string server_address("0.0.0.0:50051");
+    std::string server_address("127.0.0.1:50051");
     GreeterServiceImpl service;
 
     ServerBuilder builder;
@@ -76,29 +73,9 @@ int main()
     builder.RegisterService(&service);
     std::unique_ptr<Server> server(builder.BuildAndStart());
 
-    Server* server_ptr = server.get();
-
-    threads.schedule([&server_ptr](){
-        server_ptr->Wait();
-    });
-
-    std::string reply;
-
-    threads.schedule([&reply](){
-        //wait for server to be alive
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-        GreeterClient greeter(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
-        std::string user("world");
-        reply = greeter.SayHello(user);
-    });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-    threads.schedule([&server_ptr](){
-        auto deadline = std::chrono::system_clock::now() + std::chrono::microseconds(1000);
-        server_ptr->Shutdown(deadline);
-    });
+    GreeterClient greeter(grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()));
+    std::string user("world");
+    std::string reply = greeter.SayHello(user);
 
     if (strcmp(reply.c_str(), "hello world") == 0)
     {

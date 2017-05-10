@@ -17,8 +17,8 @@
 
 #include <boost/thread/scoped_thread.hpp>
 
-#include <list>
 #include <thread>
+#include <vector>
 
 namespace bond { namespace ext
 {
@@ -31,16 +31,15 @@ class thread_pool
 public:
 
     //
-    // Constructs thread pool with specified number of threads
+    // Constructs a thread pool with the specified number of threads
     //
     // @param numThreads: total number of threads to be created
     // @remark:
     //     Zero number of concurrent threads will allow simultaneous
     //     execution of as many threads as many CPU/cores are available.
-    //     This is default value.
     explicit
     thread_pool(uint32_t numThreads = 0)
-        : m_work(*this)
+        : _work(*this)
     {
         //
         // If preferred # of threads is 0, use # of cpu cores.
@@ -55,7 +54,7 @@ public:
         //
         for (uint32_t i = 0; i < numThreads; ++i)
         {
-            m_threads.emplace_back(
+            _threads.emplace_back(
                 [this]()
                 {
                     this->run();
@@ -83,15 +82,17 @@ public:
         return *this;
     }
 
+private:
+
     //
     // Working threads.
     //
-    std::list<boost::scoped_thread<boost::join_if_joinable>> m_threads;
+    std::vector<boost::scoped_thread<boost::join_if_joinable>> _threads;
 
     //
     // Helper to keep io_service spinning.
     //
-    boost::asio::io_service::work m_work;
+    boost::asio::io_service::work _work;
 };
 
 } } // namespace bond.ext
