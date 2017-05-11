@@ -18,7 +18,7 @@
 class BasicThreadPoolTests
 {
     static
-    void addOne(int* i, event* sum_event)
+    void addOne(std::atomic<int>* i, event* sum_event)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         (*i)++;
@@ -29,16 +29,17 @@ class BasicThreadPoolTests
     void UseStdFunction()
     {
         bond::ext::thread_pool threads(1);
-        int sum = 0;
+        std::atomic<int> sum = 0;
         event sum_event;
 
-        std::function<void(int*, event*)> f_addOne = addOne;
+        std::function<void(std::atomic<int>*, event*)> f_addOne = addOne;
 
         threads.schedule(std::bind(f_addOne, &sum, &sum_event));
 
         bool waitResult = sum_event.wait(std::chrono::seconds(30));
-
         UT_AssertIsTrue(waitResult);
+
+        UT_AssertIsTrue(sum == 1);
     }
 
     static
