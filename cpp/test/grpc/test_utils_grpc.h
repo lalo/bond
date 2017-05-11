@@ -1,11 +1,14 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
-class Event
+class event
 {
 public:
-    explicit Event(bool initialValue = false) :
+    explicit event(bool initialValue = false) :
         _m(),
         _cv(),
         _set(initialValue)
@@ -39,10 +42,10 @@ private:
     std::condition_variable _cv;
     bool _set;
 
-    Event(const Event&) = delete;
-    Event(Event&&) = delete;
-    Event& operator=(const Event&) = delete;
-    Event& operator=(Event&&) = delete;
+    event(const event&) = delete;
+    event(event&&) = delete;
+    event& operator=(const event&) = delete;
+    event& operator=(event&&) = delete;
 
     void setResetImpl(bool value)
     {

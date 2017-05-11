@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifdef _MSC_VER
     #pragma warning(disable : 4505) // disable "unreferenced local function has been removed" warning
@@ -16,11 +18,11 @@
 class BasicThreadPoolTests
 {
     static
-    void addOne(int* i, Event* event)
+    void addOne(int* i, event* sum_event)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         (*i)++;
-        event->set();
+        sum_event->set();
     }
 
     static
@@ -28,15 +30,15 @@ class BasicThreadPoolTests
     {
         bond::ext::thread_pool threads(1);
         int sum = 0;
-        Event sum_event;
+        event sum_event;
 
-        std::function<void(int*, Event*)> f_addOne = addOne;
+        std::function<void(int*, event*)> f_addOne = addOne;
 
         threads.schedule(std::bind(f_addOne, &sum, &sum_event));
 
-        sum_event.wait(std::chrono::seconds(30));
+        bool waitResult = sum_event.wait(std::chrono::seconds(30));
 
-        UT_AssertIsTrue(sum == 1);
+        UT_AssertIsTrue(waitResult);
     }
 
     static

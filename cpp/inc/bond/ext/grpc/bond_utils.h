@@ -46,7 +46,7 @@ class SerializationTraits<bond::comm::message<T>, typename std::enable_if<bond::
 
     grpc_slice_unref(slice);
 
-    return Status(StatusCode::OK, "");
+    return Status::OK;
   }
 
   static Status Deserialize(grpc_byte_buffer* buffer, bond::comm::message<T>* msg) {
@@ -87,7 +87,7 @@ class SerializationTraits<bond::comm::message<T>, typename std::enable_if<bond::
 
     *msg = bond::comm::message<T>(payload);
 
-    return Status(StatusCode::OK, "");
+    return Status::OK;
   }
 };
 
