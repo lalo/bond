@@ -1,6 +1,6 @@
 cxx_add_compile_options(Clang -Wno-unused-value)
 
-add_bond_executable (comm_compatibility_test COMM EXCLUDE_FROM_ALL
+add_bond_executable (comm_compatibility_test EXCLUDE_FROM_ALL
     commcmd_arg.bond
     commcompat.cpp)
 

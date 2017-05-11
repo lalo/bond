@@ -17,12 +17,9 @@
 
 using namespace PingPongNS;
 
-const int NumRequestsExpected = 10;
-const int NumEventsExpected = 9;
-const int NumErrorsExpected = 8;
-static int NumRequests = 0;
-static int NumEvents = 0;
-static int NumErrors = 0;
+static int NumRequestsReceived = 0;
+static int NumEventsReceived = 0;
+static int NumErrorsReceived = 0;
 
 // Implement service
 struct PingPongImpl : PingPong
@@ -41,7 +38,7 @@ struct PingPongImpl : PingPong
 
             PingResponse response;
             response.Payload = request.Payload;
-            NumRequests++;
+            NumRequestsReceived++;
             callback(std::move(response));
             break;
         }
@@ -54,7 +51,7 @@ struct PingPongImpl : PingPong
             bond::comm::Error err;
             err.error_code = 1234;
             err.message = request.Payload;
-            NumErrors++;
+            NumErrorsReceived++;
             callback(bond::comm::error(err));
             break;
         }
@@ -72,7 +69,7 @@ struct PingPongImpl : PingPong
         printf("Received request \"%s\"\n", theEvent.value().Deserialize().Payload.c_str());
         fflush(stdout);
 
-        NumEvents++;
+        NumEventsReceived++;
     }
 };
 
@@ -88,7 +85,7 @@ int main()
         TestLayer<2>
     > layers(layer1, layer2);
 
-    bond::comm::SocketAddress loopback("127.0.0.1", 25188);
+    bond::comm::SocketAddress loopback("127.0.0.1", Port);
     bond::comm::epoxy::EpoxyTransport transport(layers);
 
     auto server = transport.Bind(loopback, boost::make_shared<PingPongImpl>());
@@ -98,9 +95,9 @@ int main()
 
     boost::this_thread::sleep_for(boost::chrono::seconds(3));
 
-    if ((NumRequests != NumRequestsExpected) ||
-        (NumEvents != NumEventsExpected) ||
-        (NumErrors != NumErrorsExpected))
+    if ((NumRequestsReceived != NumRequests) ||
+        (NumEventsReceived != NumEvents) ||
+        (NumErrorsReceived != NumErrors))
     {
         printf("Server failed: Did not receive all expected messages\n");
         fflush(stdout);
