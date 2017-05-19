@@ -127,9 +127,10 @@ public:
     };
 };|]
       where
-        proxyName = declName ++ "Client"
         methodNames :: [String]
         methodNames = map methodName serviceMethods
+
+        proxyName = declName ++ "Client"
 
         serviceMethodsWithIndex :: [(Integer,Method)]
         serviceMethodsWithIndex = zip [0..] serviceMethods

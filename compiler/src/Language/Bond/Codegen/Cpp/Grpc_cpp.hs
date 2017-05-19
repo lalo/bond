@@ -56,7 +56,7 @@ static const char* #{declName}_method_names[] =
 #{declName}::#{declName}Client::#{declName}Client(const std::shared_ptr< ::grpc::ChannelInterface>& channel, std::shared_ptr< ::bond::ext::gRPC::io_manager> ioManager)
     : channel_(channel)
     , ioManager_(ioManager)
-    #{newlineSep 1 methodStringsStub serviceMethodsWithIndex}
+    #{newlineSep 1 proxyMethodMemberInit serviceMethodsWithIndex}
     { }
 
 #{doubleLineSep 0 methodDecl serviceMethods}
@@ -68,8 +68,8 @@ static const char* #{declName}_method_names[] =
         serviceMethodsWithIndex :: [(Integer,Method)]
         serviceMethodsWithIndex = zip [0..] serviceMethods
 
-        methodStringsStub (index,Function{..}) = [lt|, rpcmethod_#{methodName}_(#{declName}_method_names[#{index}], ::grpc::RpcMethod::NORMAL_RPC, channel)|]
-        methodStringsStub (_,Event{..}) = [lt|/* TODO stub ctor initialization for event #{methodName} */|]
+        proxyMethodMemberInit (index,Function{..}) = [lt|, rpcmethod_#{methodName}_(#{declName}_method_names[#{index}], ::grpc::RpcMethod::NORMAL_RPC, channel)|]
+        proxyMethodMemberInit (_,Event{..}) = [lt|/* TODO stub ctor initialization for event #{methodName} */|]
 
         methodDecl Function{..} = [lt|void #{declName}::#{declName}Client::Async#{methodName}(::grpc::ClientContext* context, const #{request methodInput}& request, std::function<void(const #{response methodResult}&, const ::grpc::Status&)> cb)
 {
