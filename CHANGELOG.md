@@ -15,14 +15,25 @@ different versioning scheme, following the Haskell community's
 * `gbc` & compiler library: TBD
 * IDL core version: TBD
 * IDL comm version: TBD
-* C++ version: TBD
+* C++ version: TBD (bug fix bump needed)
 * C# NuGet version: TBD  (bug fix bump needed)
 * C# Comm NuGet version: TBD
 
+### C++ ###
+
+* When Unicode conversion fails during JSON deserialization to wstring, a
+  bond::CoreException is now thrown instead of a Boost exception.
+* When SimpleJSON deserializes a map key with no matching value, a
+  bond::CoreException is now thrown.
+* When SimpleJSON deserializes a map key of non-primitive type, a
+  bond::CoreException is now thrown.
+
 ### C# ###
 
-* Reflection.IsBonded now recognizes custom IBonded
-implementations.
+* Reflection.IsBonded now recognizes custom IBonded implementations.
+* Use Newtonsoft's JSON.NET BigInteger support -- when available -- to
+  handle the full range of uint64 values in the SimpleJson protocol (.NET
+  4.5 or greater, .NET Standard 1.6 or greater).
 
 ## 6.0.0: 2017-06-29  ##
 * `gbc` & compiler library: 0.10.0.0
