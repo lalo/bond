@@ -117,6 +117,7 @@ find_package (Boost 1.53.0
     OPTIONAL_COMPONENTS
         chrono
         date_time
+        program_options
         thread
         system
         unit_test_framework

@@ -3,6 +3,7 @@
 
 // event.h needed for test purposes
 #include <bond/ext/detail/event.h>
+#include <bond/ext/detail/countdown_event.h>
 
 #include <bond/ext/grpc/io_manager.h>
 #include <bond/ext/grpc/server.h>
@@ -11,6 +12,7 @@
 #include <bond/ext/grpc/unary_call.h>
 #include <bond/ext/grpc/wait_callback.h>
 
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <functional>
@@ -18,12 +20,19 @@
 #include <memory>
 #include <string>
 
+#pragma warning(disable: 4505)
+#include <boost/program_options.hpp>
+#pragma warning(disable: 4505)
+
+namespace po = boost::program_options;
+
 using grpc::Channel;
 using grpc::ServerBuilder;
 using grpc::Status;
 using grpc::StatusCode;
 
 using bond::ext::detail::event;
+using bond::ext::detail::countdown_event;
 using bond::ext::gRPC::io_manager;
 using bond::ext::gRPC::wait_callback;
 
@@ -42,224 +51,214 @@ private:
             bond::bonded<PingRequest>,
             PingReply> call) override
     {
-        PingRequest request = call.request().Deserialize();
+        // PingRequest request = call.request().Deserialize();
 
         PingReply reply;
-        reply.message = "ping " + request.name;
+        reply.message = "ping " ;//+ request.name;
 
         call.Finish(reply);
     }
-
-    void PingNoPayload(
-        bond::ext::gRPC::unary_call<
-            bond::bonded<bond::Void>,
-            PingReply> call) override
-    {
-        PingReply reply;
-        reply.message = "ping pong";
-
-        // the server context can been accessed to add, for example,
-        // additional metadata to the response
-        call.context().AddInitialMetadata(metadata_key, "metadata-value");
-        call.Finish(reply, Status::OK);
-    }
-
-    void PingNoResponse(
-        bond::ext::gRPC::unary_call<
-            bond::bonded<PingRequest>,
-            bond::Void> call) override
-    {
-        PingRequest request = call.request().Deserialize();
-
-        // TODO: the current implementation requires that we respond with dummy data.
-        // This will be fixed in a later release.
-        call.Finish(bond::bonded<bond::Void>{bond::Void()});
-
-        pingNoResponse_event.set();
-    }
-
-    void PingVoid(
-        bond::ext::gRPC::unary_call<
-            bond::bonded<bond::Void>,
-            bond::Void> call) override
-    {
-        // TODO: the current implementation requires that we respond with dummy data.
-        // This will be fixed in a later release.
-        call.Finish(bond::Void());
-    }
-
-    void PingEventVoid(
-        bond::ext::gRPC::unary_call<
-            bond::bonded<bond::Void>,
-            bond::Void> call) override
-    {
-        // TODO: the current implementation requires that we respond with dummy data.
-        // This will be fixed in a later release.
-        call.Finish(bond::Void());
-    }
-
-    void PingShouldThrow(
-        bond::ext::gRPC::unary_call<
-            bond::bonded<PingRequest>,
-            PingReply> call) override
-    {
-        call.FinishWithError(Status(StatusCode::CANCELLED, "do not want to respond"));
-    }
 };
 
-class PingPongServiceImpl final : public PingPong<PingRequest>::Service
+volatile bool run = true;
+
+void run_server(std::string ip)
 {
-    void Ping(
-        bond::ext::gRPC::unary_call<
-            bond::bonded<PingRequest>,
-            PingReply> call) override
-    {
-        PingRequest request = call.request().Deserialize();
-
-        PingReply reply;
-        reply.message = "ping " + request.name;
-
-        call.Finish(bond::bonded<PingReply>{reply}, Status::OK);
-        // could also call:
-        // call.Finish(reply);
-    }
-};
-
-template <typename T>
-static void assertResponseReceived(wait_callback<T>& cb, size_t line)
-{
-    bool wasInvoked = cb.wait_for(std::chrono::seconds(2));
-    if (!wasInvoked)
-    {
-        std::cerr << "Callback invocation at line " << line << " timed out." << std::endl;
-        abort();
-    }
-}
-
-static void assertStatus(StatusCode expected, StatusCode actual, size_t line)
-{
-    if (expected != actual)
-    {
-        std::cerr
-            << "Expected status code " << expected << " but got " << actual
-            << " at line " << line << std::endl;
-        abort();
-    }
-}
-
-static void assertResponseContents(const wait_callback<PingReply>& cb, size_t line)
-{
-    assertStatus(StatusCode::OK, cb.status().error_code(), line);
-
-    const std::string& message = cb.response().Deserialize().message;
-    if (message.compare("ping pong") != 0)
-    {
-        std::cerr << "Response at line " << line << " had unexpected message: " << message << std::endl;
-        abort();
-    }
-}
-
-int main()
-{
-    auto ioManager = std::make_shared<io_manager>();
     auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
 
     DoublePingServiceImpl double_ping_service;
-    PingPongServiceImpl ping_pong_service;
 
     bond::ext::gRPC::server_builder builder;
     builder.SetThreadPool(threadPool);
-    const std::string server_address("127.0.0.1:50051");
+    const std::string server_address(ip + ":9143");
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder
-        .RegisterService(&double_ping_service)
-        .RegisterService(&ping_pong_service);
+    builder.RegisterService(&double_ping_service);
     std::unique_ptr<bond::ext::gRPC::server> server(builder.BuildAndStart());
 
-    DoublePing::Client doublePing(
-        grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()),
-        ioManager,
-        threadPool);
+    while (run) {}
+}
 
-    PingPong<PingRequest>::Client pingPong(
-        grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()),
-        ioManager,
-        threadPool);
+int setup_server(std::string ip, int seconds)
+{
+    std::thread t1(run_server, ip);
 
+    auto start = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::seconds(seconds/2));
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Waited " << elapsed.count() << " ms\n";
+    run = false;
+    t1.join();
+    start = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::seconds(seconds/2));
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Waited " << elapsed.count() << " ms\n";
+    //std::terminate();
 
-    const std::string user("pong");
+    return 0;
+}
 
-    PingRequest request;
-    request.name = user;
+int setup_client(std::string ip, int seconds, int quantity, int sizeBytes)
+{
+    // auto ioManager = std::make_shared<io_manager>();
+    // auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
+    //
+    // DoublePing::Client doublePing(
+    //     grpc::CreateChannel(ip + ":9143", grpc::InsecureChannelCredentials()),
+    //     ioManager,
+    //     threadPool);
 
+    auto start = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::seconds(seconds));
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Waited " << elapsed.count() << " ms\n";
+
+    std::atomic<int> neg(0);
+    std::cout << std::boolalpha
+              << "std::atomic<int> is lock free? "
+              << std::atomic_is_lock_free(&neg) << '\n';
+
+    auto f_pinger = [&quantity, &ip,/*  &doublePing, */ &neg, &sizeBytes]()
     {
-        // A bonded object can also be used for the request. Here we use a
-        // bonded object backed by an instance of PingRequest, but we could
-        // also use one backed by a reader.
-        bond::bonded<PingRequest> bondedRequest(request);
-        wait_callback<PingReply> cb;
-        doublePing.AsyncPing(bondedRequest, cb);
-        assertResponseReceived(cb, __LINE__);
-        assertResponseContents(cb, __LINE__);
-    }
+        auto ioManager = std::make_shared<io_manager>();
+        auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
 
-    {
-        // We explicitly pass a client context to this method so we can, for
-        // example, inspect the metadata the service included in the
-        // response.
-        auto context = std::make_shared<grpc::ClientContext>();
-        wait_callback<PingReply> cb;
-        doublePing.AsyncPingNoPayload(context, cb);
-        assertResponseReceived(cb, __LINE__);
-        assertResponseContents(cb, __LINE__);
+        DoublePing::Client doublePing(
+            grpc::CreateChannel(ip + ":9143", grpc::InsecureChannelCredentials()),
+            ioManager,
+            threadPool);
 
-        // After the response has been received, the server metadata can be
-        // inspected.
-        const auto& initialMetadata = context->GetServerInitialMetadata();
-        auto it = initialMetadata.find(metadata_key);
-        if (it == initialMetadata.end())
+        std::atomic<int> pos(0);
+
+        // countdown_event co(quantity/8);
+
+        auto f_count = [&pos, &neg /*, &co*/](std::shared_ptr< ::bond::ext::gRPC::unary_call_result< ::pingpong::PingReply>> res)
         {
-            std::cerr << "Server was expected to include metadata with key \"" << metadata_key << "\" but it did not." << std::endl;
-            abort();
+            pos++;
+            if((res->status.ok()))
+            {
+            }
+            else
+            {
+                //DebugBreak();
+                neg++;
+                std::cerr << res->status.error_code() << ":" << res->status.error_message() << std::endl;
+            }
+            // co.set();
+        };
+
+        for (int i = 0; i < quantity/4; i++) {
+            // if ( i == quantity/8 )
+            //     std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+
+            // A bonded object can also be used for the request. Here we use a
+            // bonded object backed by an instance of PingRequest, but we could
+            // also use one backed by a reader.
+            std::shared_ptr< grpc::ClientContext> context(new grpc::ClientContext());
+            context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+
+            PingRequest request;
+            request.name = "ping";
+            void* content = calloc(sizeBytes,1);
+            request.size = bond::blob(content, sizeBytes);
+
+            doublePing.AsyncPing(context, request, f_count);
+            // assertResponseReceived(cb, __LINE__);
+            // assertResponseContents(cb, __LINE__);
         }
-        else if (it->second.compare("metadata-value") != 0)
+
+        /*
+        bool countdownSet = co.wait_for(std::chrono::minutes(10));
+        if (countdownSet)
         {
-            std::cerr << "Server metadata value is unexpected. \"" << it->first << "\": \"" << it->second << "\"" << std::endl;
-            abort();
         }
-    }
-
-    {
-        doublePing.AsyncPingNoResponse(request);
-        bool wasEventHandled = double_ping_service.pingNoResponse_event.wait_for(std::chrono::seconds(10));
-
-        if (!wasEventHandled)
+        */
+        while (true)
         {
-            std::cerr << "timeout ocurred waiting for event to be handled at line " << __LINE__ << std::endl;
-            abort();
+            if (pos.load() >= quantity/4)
+                return;
+        }
+    };
+
+    start = std::chrono::high_resolution_clock::now();
+    std::thread t1(f_pinger);
+    // std::thread t2(f_pinger);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::thread t3(f_pinger);
+    // std::thread t4(f_pinger);
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+     std::thread t5(f_pinger);
+    // std::thread t6(f_pinger);
+     std::this_thread::sleep_for(std::chrono::milliseconds(50));
+     std::thread t7(f_pinger);
+    // std::thread t8(f_pinger);
+    t1.join();
+    // t2.join();
+    t3.join();
+    // t4.join();
+    t5.join();
+    // t6.join();
+     t7.join();
+    // t8.join();
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    std::cout << elapsed.count() << std::endl;
+    std::cout << "errores:" << (neg.load()) << std::endl;
+    std::cout << "buenos:" << (quantity - neg.load()) << std::endl;
+    std::cout << (quantity - neg.load())/(elapsed.count()/1000) << " p/s";
+
+
+    return 0;
+}
+
+int main(int ac, char* av[])
+{
+    std::string server_ip = "";
+    bool client = false;
+    int duration = 0;
+    int quantity = 0;
+    int sizeBytes = 0;
+
+    try {
+        po::options_description desc("Allowed options");
+        desc.add_options()
+            ("help", "produce help message")
+            ("server,s", po::value(&server_ip)->required(), "server IP")
+            ("duration,d", po::value(&duration)->required(), "time of duration in seconds")
+            ("client,c", po::bool_switch(&client), "client mode")
+            ("quantity,q", po::value(&quantity), "quantity of pings")
+            ("sizeBytes,b", po::value(&sizeBytes), "payload in bytes")
+            ;
+
+        po::variables_map vm;
+        po::store(po::parse_command_line(ac, av, desc), vm);
+        po::notify(vm);
+
+        if (vm.count("help")) {
+            std::cout << desc << "\n";
+            return 0;
+        }
+
+        if (server_ip.empty()) {
+            std::cout << "server IP was not set.\n";
         }
     }
-
-    {
-        wait_callback<bond::Void> cb;
-        doublePing.AsyncPingVoid(cb);
-        assertResponseReceived(cb, __LINE__);
-        assertStatus(StatusCode::OK, cb.status().error_code(), __LINE__);
+    catch (std::exception& e) {
+        std::cerr << "error: " << e.what() << "\n";
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Exception of unknown type!\n";
     }
 
-    {
-        wait_callback<PingReply> cb;
-        doublePing.AsyncPingShouldThrow(request, cb);
-        assertResponseReceived(cb, __LINE__);
-        assertStatus(StatusCode::CANCELLED, cb.status().error_code(), __LINE__);
-    }
-
-    {
-        wait_callback<PingReply> cb;
-        pingPong.AsyncPing(request, cb);
-        assertResponseReceived(cb, __LINE__);
-        assertResponseContents(cb, __LINE__);
-    }
+    if (client)
+        return setup_client(server_ip, duration, quantity, sizeBytes);
+    else
+        return setup_server(server_ip, duration);
 
     return 0;
 }
