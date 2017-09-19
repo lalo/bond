@@ -63,7 +63,7 @@ private:
     }
 };
 
-volatile bool run = true;
+static event shutdownEvent {};
 
 void run_server(std::string ip)
 {
@@ -78,7 +78,7 @@ void run_server(std::string ip)
     builder.RegisterService(&double_ping_service);
     std::unique_ptr<bond::ext::gRPC::server> server(builder.BuildAndStart());
 
-    while (run) {}
+    shutdownEvent.wait();
 }
 
 int setup_server(std::string ip, int seconds)
@@ -90,7 +90,7 @@ int setup_server(std::string ip, int seconds)
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Waited " << elapsed.count() << " ms\n";
-    run = false;
+    shutdownEvent.set();
     t1.join();
     start = std::chrono::high_resolution_clock::now();
     std::this_thread::sleep_for(std::chrono::seconds(seconds/2));
