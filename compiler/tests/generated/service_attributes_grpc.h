@@ -90,31 +90,38 @@ public:
         virtual ~ServiceCore() { }
         virtual void start(
             ::grpc::ServerCompletionQueue* cq,
-            std::shared_ptr<TThreadPool> tp) override
+            std::shared_ptr<TThreadPool> tp,
+            size_t numRecvData = 1) override
         {
             BOOST_ASSERT(cq);
             BOOST_ASSERT(tp);
 
-            _rd_foo.emplace(
-                this,
-                0,
-                cq,
-                tp,
-                std::bind(&ServiceCore::foo, this, std::placeholders::_1));
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo.emplace_back(
+                    this,
+                    0,
+                    cq,
+                    tp,
+                    std::bind(&ServiceCore::foo, this, std::placeholders::_1));
+            }
 
-            this->queue_receive(
-                0,
-                &_rd_foo->_receivedCall->_context,
-                &_rd_foo->_receivedCall->_request,
-                &_rd_foo->_receivedCall->_responder,
-                cq,
-                &_rd_foo.get());
+            for (auto& theRd : _rd_foo)
+            {
+                this->queue_receive(
+                    0,
+                    &_rd_foo->_receivedCall->_context,
+                    &_rd_foo->_receivedCall->_request,
+                    &_rd_foo->_receivedCall->_responder,
+                    cq,
+                    &theRd);
+            }
         }
 
         virtual void foo(::bond::ext::gRPC::unary_call< ::bond::bonded< ::tests::Param>, ::tests::Result>) = 0;
 
     private:
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::Param>, ::tests::Result, TThreadPool>> _rd_foo;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::Param>, ::tests::Result, TThreadPool>> _rd_foo;
     };
 
     using Service = ServiceCore< ::bond::ext::gRPC::thread_pool>;

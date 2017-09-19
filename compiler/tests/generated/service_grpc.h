@@ -334,272 +334,393 @@ public:
         virtual ~ServiceCore() { }
         virtual void start(
             ::grpc::ServerCompletionQueue* cq0,
-            std::shared_ptr<TThreadPool> tp) override
+            std::shared_ptr<TThreadPool> tp,
+            size_t numRecvData = 1) override
         {
             BOOST_ASSERT(cq0);
             BOOST_ASSERT(tp);
 
-            _rd_foo11.emplace(
-                this,
-                0,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo11, this, std::placeholders::_1));
-            _rd_foo12.emplace(
-                this,
-                1,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo12, this, std::placeholders::_1));
-            _rd_foo12_impl.emplace(
-                this,
-                2,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo12_impl, this, std::placeholders::_1));
-            _rd_foo13.emplace(
-                this,
-                3,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo13, this, std::placeholders::_1));
-            _rd_foo14.emplace(
-                this,
-                4,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo14, this, std::placeholders::_1));
-            _rd_foo15.emplace(
-                this,
-                5,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo15, this, std::placeholders::_1));
-            _rd_foo21.emplace(
-                this,
-                6,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo21, this, std::placeholders::_1));
-            _rd_foo22.emplace(
-                this,
-                7,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo22, this, std::placeholders::_1));
-            _rd_foo23.emplace(
-                this,
-                8,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo23, this, std::placeholders::_1));
-            _rd_foo24.emplace(
-                this,
-                9,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo24, this, std::placeholders::_1));
-            _rd_foo31.emplace(
-                this,
-                10,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo31, this, std::placeholders::_1));
-            _rd_foo32.emplace(
-                this,
-                11,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo32, this, std::placeholders::_1));
-            _rd_foo330.emplace(
-                this,
-                12,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo33, this, std::placeholders::_1));
-            _rd__rd_foo33.emplace(
-                this,
-                13,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::_rd_foo33, this, std::placeholders::_1));
-            _rd_foo34.emplace(
-                this,
-                14,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo34, this, std::placeholders::_1));
-            _rd_foo41.emplace(
-                this,
-                15,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo41, this, std::placeholders::_1));
-            _rd_foo42.emplace(
-                this,
-                16,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo42, this, std::placeholders::_1));
-            _rd_foo43.emplace(
-                this,
-                17,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo43, this, std::placeholders::_1));
-            _rd_foo44.emplace(
-                this,
-                18,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::foo44, this, std::placeholders::_1));
-            _rd_cq.emplace(
-                this,
-                19,
-                cq0,
-                tp,
-                std::bind(&ServiceCore::cq, this, std::placeholders::_1));
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo11.emplace_back(
+                    this,
+                    0,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo11, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo12.emplace_back(
+                    this,
+                    1,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo12, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo12_impl.emplace_back(
+                    this,
+                    2,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo12_impl, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo13.emplace_back(
+                    this,
+                    3,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo13, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo14.emplace_back(
+                    this,
+                    4,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo14, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo15.emplace_back(
+                    this,
+                    5,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo15, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo21.emplace_back(
+                    this,
+                    6,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo21, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo22.emplace_back(
+                    this,
+                    7,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo22, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo23.emplace_back(
+                    this,
+                    8,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo23, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo24.emplace_back(
+                    this,
+                    9,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo24, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo31.emplace_back(
+                    this,
+                    10,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo31, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo32.emplace_back(
+                    this,
+                    11,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo32, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo330.emplace_back(
+                    this,
+                    12,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo33, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd__rd_foo33.emplace_back(
+                    this,
+                    13,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::_rd_foo33, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo34.emplace_back(
+                    this,
+                    14,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo34, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo41.emplace_back(
+                    this,
+                    15,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo41, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo42.emplace_back(
+                    this,
+                    16,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo42, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo43.emplace_back(
+                    this,
+                    17,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo43, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo44.emplace_back(
+                    this,
+                    18,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::foo44, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_cq.emplace_back(
+                    this,
+                    19,
+                    cq0,
+                    tp,
+                    std::bind(&ServiceCore::cq, this, std::placeholders::_1));
+            }
 
-            this->queue_receive(
-                0,
-                &_rd_foo11->_receivedCall->_context,
-                &_rd_foo11->_receivedCall->_request,
-                &_rd_foo11->_receivedCall->_responder,
-                cq0,
-                &_rd_foo11.get());
-            this->queue_receive(
-                1,
-                &_rd_foo12->_receivedCall->_context,
-                &_rd_foo12->_receivedCall->_request,
-                &_rd_foo12->_receivedCall->_responder,
-                cq0,
-                &_rd_foo12.get());
-            this->queue_receive(
-                2,
-                &_rd_foo12_impl->_receivedCall->_context,
-                &_rd_foo12_impl->_receivedCall->_request,
-                &_rd_foo12_impl->_receivedCall->_responder,
-                cq0,
-                &_rd_foo12_impl.get());
-            this->queue_receive(
-                3,
-                &_rd_foo13->_receivedCall->_context,
-                &_rd_foo13->_receivedCall->_request,
-                &_rd_foo13->_receivedCall->_responder,
-                cq0,
-                &_rd_foo13.get());
-            this->queue_receive(
-                4,
-                &_rd_foo14->_receivedCall->_context,
-                &_rd_foo14->_receivedCall->_request,
-                &_rd_foo14->_receivedCall->_responder,
-                cq0,
-                &_rd_foo14.get());
-            this->queue_receive(
-                5,
-                &_rd_foo15->_receivedCall->_context,
-                &_rd_foo15->_receivedCall->_request,
-                &_rd_foo15->_receivedCall->_responder,
-                cq0,
-                &_rd_foo15.get());
-            this->queue_receive(
-                6,
-                &_rd_foo21->_receivedCall->_context,
-                &_rd_foo21->_receivedCall->_request,
-                &_rd_foo21->_receivedCall->_responder,
-                cq0,
-                &_rd_foo21.get());
-            this->queue_receive(
-                7,
-                &_rd_foo22->_receivedCall->_context,
-                &_rd_foo22->_receivedCall->_request,
-                &_rd_foo22->_receivedCall->_responder,
-                cq0,
-                &_rd_foo22.get());
-            this->queue_receive(
-                8,
-                &_rd_foo23->_receivedCall->_context,
-                &_rd_foo23->_receivedCall->_request,
-                &_rd_foo23->_receivedCall->_responder,
-                cq0,
-                &_rd_foo23.get());
-            this->queue_receive(
-                9,
-                &_rd_foo24->_receivedCall->_context,
-                &_rd_foo24->_receivedCall->_request,
-                &_rd_foo24->_receivedCall->_responder,
-                cq0,
-                &_rd_foo24.get());
-            this->queue_receive(
-                10,
-                &_rd_foo31->_receivedCall->_context,
-                &_rd_foo31->_receivedCall->_request,
-                &_rd_foo31->_receivedCall->_responder,
-                cq0,
-                &_rd_foo31.get());
-            this->queue_receive(
-                11,
-                &_rd_foo32->_receivedCall->_context,
-                &_rd_foo32->_receivedCall->_request,
-                &_rd_foo32->_receivedCall->_responder,
-                cq0,
-                &_rd_foo32.get());
-            this->queue_receive(
-                12,
-                &_rd_foo330->_receivedCall->_context,
-                &_rd_foo330->_receivedCall->_request,
-                &_rd_foo330->_receivedCall->_responder,
-                cq0,
-                &_rd_foo330.get());
-            this->queue_receive(
-                13,
-                &_rd__rd_foo33->_receivedCall->_context,
-                &_rd__rd_foo33->_receivedCall->_request,
-                &_rd__rd_foo33->_receivedCall->_responder,
-                cq0,
-                &_rd__rd_foo33.get());
-            this->queue_receive(
-                14,
-                &_rd_foo34->_receivedCall->_context,
-                &_rd_foo34->_receivedCall->_request,
-                &_rd_foo34->_receivedCall->_responder,
-                cq0,
-                &_rd_foo34.get());
-            this->queue_receive(
-                15,
-                &_rd_foo41->_receivedCall->_context,
-                &_rd_foo41->_receivedCall->_request,
-                &_rd_foo41->_receivedCall->_responder,
-                cq0,
-                &_rd_foo41.get());
-            this->queue_receive(
-                16,
-                &_rd_foo42->_receivedCall->_context,
-                &_rd_foo42->_receivedCall->_request,
-                &_rd_foo42->_receivedCall->_responder,
-                cq0,
-                &_rd_foo42.get());
-            this->queue_receive(
-                17,
-                &_rd_foo43->_receivedCall->_context,
-                &_rd_foo43->_receivedCall->_request,
-                &_rd_foo43->_receivedCall->_responder,
-                cq0,
-                &_rd_foo43.get());
-            this->queue_receive(
-                18,
-                &_rd_foo44->_receivedCall->_context,
-                &_rd_foo44->_receivedCall->_request,
-                &_rd_foo44->_receivedCall->_responder,
-                cq0,
-                &_rd_foo44.get());
-            this->queue_receive(
-                19,
-                &_rd_cq->_receivedCall->_context,
-                &_rd_cq->_receivedCall->_request,
-                &_rd_cq->_receivedCall->_responder,
-                cq0,
-                &_rd_cq.get());
+            for (auto& theRd : _rd_foo11)
+            {
+                this->queue_receive(
+                    0,
+                    &_rd_foo11->_receivedCall->_context,
+                    &_rd_foo11->_receivedCall->_request,
+                    &_rd_foo11->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo12)
+            {
+                this->queue_receive(
+                    1,
+                    &_rd_foo12->_receivedCall->_context,
+                    &_rd_foo12->_receivedCall->_request,
+                    &_rd_foo12->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo12_impl)
+            {
+                this->queue_receive(
+                    2,
+                    &_rd_foo12_impl->_receivedCall->_context,
+                    &_rd_foo12_impl->_receivedCall->_request,
+                    &_rd_foo12_impl->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo13)
+            {
+                this->queue_receive(
+                    3,
+                    &_rd_foo13->_receivedCall->_context,
+                    &_rd_foo13->_receivedCall->_request,
+                    &_rd_foo13->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo14)
+            {
+                this->queue_receive(
+                    4,
+                    &_rd_foo14->_receivedCall->_context,
+                    &_rd_foo14->_receivedCall->_request,
+                    &_rd_foo14->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo15)
+            {
+                this->queue_receive(
+                    5,
+                    &_rd_foo15->_receivedCall->_context,
+                    &_rd_foo15->_receivedCall->_request,
+                    &_rd_foo15->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo21)
+            {
+                this->queue_receive(
+                    6,
+                    &_rd_foo21->_receivedCall->_context,
+                    &_rd_foo21->_receivedCall->_request,
+                    &_rd_foo21->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo22)
+            {
+                this->queue_receive(
+                    7,
+                    &_rd_foo22->_receivedCall->_context,
+                    &_rd_foo22->_receivedCall->_request,
+                    &_rd_foo22->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo23)
+            {
+                this->queue_receive(
+                    8,
+                    &_rd_foo23->_receivedCall->_context,
+                    &_rd_foo23->_receivedCall->_request,
+                    &_rd_foo23->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo24)
+            {
+                this->queue_receive(
+                    9,
+                    &_rd_foo24->_receivedCall->_context,
+                    &_rd_foo24->_receivedCall->_request,
+                    &_rd_foo24->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo31)
+            {
+                this->queue_receive(
+                    10,
+                    &_rd_foo31->_receivedCall->_context,
+                    &_rd_foo31->_receivedCall->_request,
+                    &_rd_foo31->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo32)
+            {
+                this->queue_receive(
+                    11,
+                    &_rd_foo32->_receivedCall->_context,
+                    &_rd_foo32->_receivedCall->_request,
+                    &_rd_foo32->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo330)
+            {
+                this->queue_receive(
+                    12,
+                    &_rd_foo330->_receivedCall->_context,
+                    &_rd_foo330->_receivedCall->_request,
+                    &_rd_foo330->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd__rd_foo33)
+            {
+                this->queue_receive(
+                    13,
+                    &_rd__rd_foo33->_receivedCall->_context,
+                    &_rd__rd_foo33->_receivedCall->_request,
+                    &_rd__rd_foo33->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo34)
+            {
+                this->queue_receive(
+                    14,
+                    &_rd_foo34->_receivedCall->_context,
+                    &_rd_foo34->_receivedCall->_request,
+                    &_rd_foo34->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo41)
+            {
+                this->queue_receive(
+                    15,
+                    &_rd_foo41->_receivedCall->_context,
+                    &_rd_foo41->_receivedCall->_request,
+                    &_rd_foo41->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo42)
+            {
+                this->queue_receive(
+                    16,
+                    &_rd_foo42->_receivedCall->_context,
+                    &_rd_foo42->_receivedCall->_request,
+                    &_rd_foo42->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo43)
+            {
+                this->queue_receive(
+                    17,
+                    &_rd_foo43->_receivedCall->_context,
+                    &_rd_foo43->_receivedCall->_request,
+                    &_rd_foo43->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo44)
+            {
+                this->queue_receive(
+                    18,
+                    &_rd_foo44->_receivedCall->_context,
+                    &_rd_foo44->_receivedCall->_request,
+                    &_rd_foo44->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_cq)
+            {
+                this->queue_receive(
+                    19,
+                    &_rd_cq->_receivedCall->_context,
+                    &_rd_cq->_receivedCall->_request,
+                    &_rd_cq->_receivedCall->_responder,
+                    cq0,
+                    &theRd);
+            }
         }
 
         virtual void foo11(::bond::ext::gRPC::unary_call< ::bond::bonded< ::bond::Void>, ::bond::Void>) = 0;
@@ -624,26 +745,26 @@ public:
         virtual void cq(::bond::ext::gRPC::unary_call< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes>) = 0;
 
     private:
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo11;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo12;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo12_impl;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::bond::Void, TThreadPool>> _rd_foo13;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::bond::Void, TThreadPool>> _rd_foo14;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests2::OtherBasicTypes>, ::bond::Void, TThreadPool>> _rd_foo15;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo21;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo22;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::bond::Void, TThreadPool>> _rd_foo23;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::bond::Void, TThreadPool>> _rd_foo24;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes, TThreadPool>> _rd_foo31;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes, TThreadPool>> _rd_foo32;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::tests::BasicTypes, TThreadPool>> _rd_foo330;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::tests::BasicTypes, TThreadPool>> _rd__rd_foo33;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::tests::BasicTypes, TThreadPool>> _rd_foo34;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::dummy, TThreadPool>> _rd_foo41;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::dummy, TThreadPool>> _rd_foo42;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::tests::dummy, TThreadPool>> _rd_foo43;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::tests::dummy, TThreadPool>> _rd_foo44;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes, TThreadPool>> _rd_cq;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo11;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo12;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo12_impl;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::bond::Void, TThreadPool>> _rd_foo13;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::bond::Void, TThreadPool>> _rd_foo14;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests2::OtherBasicTypes>, ::bond::Void, TThreadPool>> _rd_foo15;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo21;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::bond::Void, TThreadPool>> _rd_foo22;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::bond::Void, TThreadPool>> _rd_foo23;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::bond::Void, TThreadPool>> _rd_foo24;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes, TThreadPool>> _rd_foo31;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes, TThreadPool>> _rd_foo32;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::tests::BasicTypes, TThreadPool>> _rd_foo330;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::tests::BasicTypes, TThreadPool>> _rd__rd_foo33;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::tests::BasicTypes, TThreadPool>> _rd_foo34;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::dummy, TThreadPool>> _rd_foo41;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::dummy, TThreadPool>> _rd_foo42;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::BasicTypes>, ::tests::dummy, TThreadPool>> _rd_foo43;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::tests::dummy>, ::tests::dummy, TThreadPool>> _rd_foo44;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, ::tests::BasicTypes, TThreadPool>> _rd_cq;
     };
 
     using Service = ServiceCore< ::bond::ext::gRPC::thread_pool>;

@@ -117,51 +117,70 @@ public:
         virtual ~ServiceCore() { }
         virtual void start(
             ::grpc::ServerCompletionQueue* cq,
-            std::shared_ptr<TThreadPool> tp) override
+            std::shared_ptr<TThreadPool> tp,
+            size_t numRecvData = 1) override
         {
             BOOST_ASSERT(cq);
             BOOST_ASSERT(tp);
 
-            _rd_foo31.emplace(
-                this,
-                0,
-                cq,
-                tp,
-                std::bind(&ServiceCore::foo31, this, std::placeholders::_1));
-            _rd_foo32.emplace(
-                this,
-                1,
-                cq,
-                tp,
-                std::bind(&ServiceCore::foo32, this, std::placeholders::_1));
-            _rd_foo33.emplace(
-                this,
-                2,
-                cq,
-                tp,
-                std::bind(&ServiceCore::foo33, this, std::placeholders::_1));
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo31.emplace_back(
+                    this,
+                    0,
+                    cq,
+                    tp,
+                    std::bind(&ServiceCore::foo31, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo32.emplace_back(
+                    this,
+                    1,
+                    cq,
+                    tp,
+                    std::bind(&ServiceCore::foo32, this, std::placeholders::_1));
+            }
+            for (size_t i = 0; i < numRecvData; ++i)
+            {
+                _rd_foo33.emplace_back(
+                    this,
+                    2,
+                    cq,
+                    tp,
+                    std::bind(&ServiceCore::foo33, this, std::placeholders::_1));
+            }
 
-            this->queue_receive(
-                0,
-                &_rd_foo31->_receivedCall->_context,
-                &_rd_foo31->_receivedCall->_request,
-                &_rd_foo31->_receivedCall->_responder,
-                cq,
-                &_rd_foo31.get());
-            this->queue_receive(
-                1,
-                &_rd_foo32->_receivedCall->_context,
-                &_rd_foo32->_receivedCall->_request,
-                &_rd_foo32->_receivedCall->_responder,
-                cq,
-                &_rd_foo32.get());
-            this->queue_receive(
-                2,
-                &_rd_foo33->_receivedCall->_context,
-                &_rd_foo33->_receivedCall->_request,
-                &_rd_foo33->_receivedCall->_responder,
-                cq,
-                &_rd_foo33.get());
+            for (auto& theRd : _rd_foo31)
+            {
+                this->queue_receive(
+                    0,
+                    &_rd_foo31->_receivedCall->_context,
+                    &_rd_foo31->_receivedCall->_request,
+                    &_rd_foo31->_receivedCall->_responder,
+                    cq,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo32)
+            {
+                this->queue_receive(
+                    1,
+                    &_rd_foo32->_receivedCall->_context,
+                    &_rd_foo32->_receivedCall->_request,
+                    &_rd_foo32->_receivedCall->_responder,
+                    cq,
+                    &theRd);
+            }
+            for (auto& theRd : _rd_foo33)
+            {
+                this->queue_receive(
+                    2,
+                    &_rd_foo33->_receivedCall->_context,
+                    &_rd_foo33->_receivedCall->_request,
+                    &_rd_foo33->_receivedCall->_responder,
+                    cq,
+                    &theRd);
+            }
         }
 
         virtual void foo31(::bond::ext::gRPC::unary_call< ::bond::bonded<Payload>, ::bond::Void>) = 0;
@@ -169,9 +188,9 @@ public:
         virtual void foo33(::bond::ext::gRPC::unary_call< ::bond::bonded<Payload>, Payload>) = 0;
 
     private:
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded<Payload>, ::bond::Void, TThreadPool>> _rd_foo31;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, Payload, TThreadPool>> _rd_foo32;
-        ::boost::optional< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded<Payload>, Payload, TThreadPool>> _rd_foo33;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded<Payload>, ::bond::Void, TThreadPool>> _rd_foo31;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded< ::bond::Void>, Payload, TThreadPool>> _rd_foo32;
+        ::std::vector< ::bond::ext::gRPC::detail::service_unary_call_data< ::bond::bonded<Payload>, Payload, TThreadPool>> _rd_foo33;
     };
 
     using Service = ServiceCore< ::bond::ext::gRPC::thread_pool>;

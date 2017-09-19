@@ -175,7 +175,7 @@ namespace bond { namespace ext { namespace gRPC {
         }
 
         /// Return a running server which is ready for processing calls.
-        std::unique_ptr<bond::ext::gRPC::server_core<TThreadPool>> BuildAndStart()
+        std::unique_ptr<bond::ext::gRPC::server_core<TThreadPool>> BuildAndStart(size_t numRecvData = 1)
         {
             std::unique_ptr<grpc::ServerCompletionQueue> cq =
                 _grpcServerBuilder.AddCompletionQueue();
@@ -191,7 +191,7 @@ namespace bond { namespace ext { namespace gRPC {
             // methods.
             for (auto& service : _services)
             {
-                service->start(cq.get(), _threadPool);
+                service->start(cq.get(), _threadPool, numRecvData);
             }
 
             std::unique_ptr<bond::ext::gRPC::server_core<TThreadPool>> result {
