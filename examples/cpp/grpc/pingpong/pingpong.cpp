@@ -65,7 +65,7 @@ private:
 
 static event shutdownEvent {};
 
-void run_server(std::string ip)
+void run_server(std::string ip, size_t serverRecvData)
 {
     auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
 
@@ -76,14 +76,14 @@ void run_server(std::string ip)
     const std::string server_address(ip + ":9143");
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&double_ping_service);
-    std::unique_ptr<bond::ext::gRPC::server> server(builder.BuildAndStart());
+    std::unique_ptr<bond::ext::gRPC::server> server(builder.BuildAndStart(serverRecvData));
 
     shutdownEvent.wait();
 }
 
-int setup_server(std::string ip, int seconds)
+int setup_server(std::string ip, size_t serverRecvData, int seconds)
 {
-    std::thread t1(run_server, ip);
+    std::thread t1(run_server, ip, serverRecvData);
 
     auto start = std::chrono::high_resolution_clock::now();
     std::this_thread::sleep_for(std::chrono::seconds(seconds/2));
@@ -222,6 +222,7 @@ int main(int ac, char* av[])
     int quantity = 0;
     int threads = 0;
     int sizeBytes = 0;
+    size_t serverRecvData = 1;
 
     try {
         po::options_description desc("Allowed options");
@@ -233,6 +234,7 @@ int main(int ac, char* av[])
             ("quantity,q", po::value(&quantity), "quantity of pings")
             ("threads,t", po::value(&threads), "quantity of main threads that divide work")
             ("sizeBytes,b", po::value(&sizeBytes), "payload in bytes")
+            ("serverRecvData,r", po::value(&serverRecvData), "number of server-side recv data structs per method")
             ;
 
         po::variables_map vm;
@@ -259,7 +261,7 @@ int main(int ac, char* av[])
     if (client)
         return setup_client(server_ip, duration, quantity, sizeBytes, threads);
     else
-        return setup_server(server_ip, duration);
+        return setup_server(server_ip, serverRecvData, duration);
 
     return 0;
 }
