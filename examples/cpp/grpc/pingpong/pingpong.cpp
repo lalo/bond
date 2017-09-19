@@ -44,6 +44,7 @@ class DoublePingServiceImpl final : public DoublePing::Service
 {
 public:
     event pingNoResponse_event;
+    std::atomic<int> pos;
 
 private:
     void Ping(
@@ -51,6 +52,8 @@ private:
             bond::bonded<PingRequest>,
             PingReply> call) override
     {
+        pos++;
+        std::cerr << "receive:" << (pos.load()) << std::endl;
         // PingRequest request = call.request().Deserialize();
 
         PingReply reply;
@@ -94,12 +97,11 @@ int setup_server(std::string ip, int seconds)
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
     std::cout << "Waited " << elapsed.count() << " ms\n";
-    //std::terminate();
 
     return 0;
 }
 
-int setup_client(std::string ip, int seconds, int quantity, int sizeBytes)
+int setup_client(std::string ip, int seconds, int quantity, int sizeBytes, int threads)
 {
     // auto ioManager = std::make_shared<io_manager>();
     // auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
@@ -115,28 +117,47 @@ int setup_client(std::string ip, int seconds, int quantity, int sizeBytes)
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "Waited " << elapsed.count() << " ms\n";
 
+    // var to keep track of responses that are failures across all threads
     std::atomic<int> neg(0);
     std::cout << std::boolalpha
               << "std::atomic<int> is lock free? "
               << std::atomic_is_lock_free(&neg) << '\n';
 
-    auto f_pinger = [&quantity, &ip,/*  &doublePing, */ &neg, &sizeBytes]()
+    auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
+    // auto channel = grpc::CreateChannel(ip + ":9143", grpc::InsecureChannelCredentials());
+    // auto ioManager = std::make_shared<io_manager>();
+
+    PingRequest request;
+    request.name = "ping";
+    void* content = calloc(sizeBytes,1);
+    request.size = bond::blob(content, sizeBytes);
+
+    bond::OutputBuffer output;
+    bond::CompactBinaryWriter<bond::OutputBuffer> writer(output);
+
+    Serialize(request, writer);
+    bond::blob data = output.GetBuffer();
+
+    bond::CompactBinaryReader<bond::InputBuffer> reader(data);
+    bond::bonded<PingRequest> bondedRequest(reader);
+
+    auto f_pinger = [bondedRequest, &quantity, &threads, &ip/* ,  &doublePing */, &neg/*, &sizeBytes*//* ,  &ioManager */,  &threadPool](/*const std::shared_ptr< ::grpc::ChannelInterface>& channel*/)
     {
         auto ioManager = std::make_shared<io_manager>();
-        auto threadPool = std::make_shared<bond::ext::gRPC::thread_pool>();
+        auto channel = grpc::CreateChannel(ip + ":9143", grpc::InsecureChannelCredentials());
 
         DoublePing::Client doublePing(
-            grpc::CreateChannel(ip + ":9143", grpc::InsecureChannelCredentials()),
+            channel,
             ioManager,
             threadPool);
 
-        std::atomic<int> pos(0);
+        // var to keep track of responses that came back per thread
+        //std::atomic<int> pos(0);
 
-        // countdown_event co(quantity/8);
+        countdown_event test(quantity / threads);
 
-        auto f_count = [&pos, &neg /*, &co*/](std::shared_ptr< ::bond::ext::gRPC::unary_call_result< ::pingpong::PingReply>> res)
+        auto f_count = [/*&pos,*/ &neg, &test](std::shared_ptr< ::bond::ext::gRPC::unary_call_result< ::pingpong::PingReply>> res)
         {
-            pos++;
             if((res->status.ok()))
             {
             }
@@ -145,64 +166,43 @@ int setup_client(std::string ip, int seconds, int quantity, int sizeBytes)
                 //DebugBreak();
                 neg++;
                 std::cerr << res->status.error_code() << ":" << res->status.error_message() << std::endl;
+                std::cerr << res->status.error_details() << std::endl;
             }
-            // co.set();
+
+            //pos++;
+            test.set();
         };
 
-        for (int i = 0; i < quantity/4; i++) {
-            // if ( i == quantity/8 )
-            //     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-
-            // A bonded object can also be used for the request. Here we use a
-            // bonded object backed by an instance of PingRequest, but we could
-            // also use one backed by a reader.
+        for (int i = 0; i < quantity/threads; i++) {
             std::shared_ptr< grpc::ClientContext> context(new grpc::ClientContext());
             context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
-            PingRequest request;
-            request.name = "ping";
-            void* content = calloc(sizeBytes,1);
-            request.size = bond::blob(content, sizeBytes);
-
-            doublePing.AsyncPing(context, request, f_count);
-            // assertResponseReceived(cb, __LINE__);
-            // assertResponseContents(cb, __LINE__);
+            doublePing.AsyncPing(context, bondedRequest, f_count);
         }
 
+        // busy loop until pos counter reaches the quantity per thread
+        test.wait();
         /*
-        bool countdownSet = co.wait_for(std::chrono::minutes(10));
-        if (countdownSet)
-        {
-        }
-        */
         while (true)
         {
-            if (pos.load() >= quantity/4)
+            if (pos.load() >= quantity/threads)
                 return;
         }
+        */
     };
 
+    std::thread* thread_arr = new std::thread[threads];
+
     start = std::chrono::high_resolution_clock::now();
-    std::thread t1(f_pinger);
-    // std::thread t2(f_pinger);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    std::thread t3(f_pinger);
-    // std::thread t4(f_pinger);
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
-     std::thread t5(f_pinger);
-    // std::thread t6(f_pinger);
-     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-     std::thread t7(f_pinger);
-    // std::thread t8(f_pinger);
-    t1.join();
-    // t2.join();
-    t3.join();
-    // t4.join();
-    t5.join();
-    // t6.join();
-     t7.join();
-    // t8.join();
+
+    for (int i = 0; i < threads; i++) {
+        thread_arr[i] = std::thread(f_pinger);
+    }
+
+    for (int i = 0; i < threads; i++) {
+        thread_arr[i].join();
+    }
+
     end = std::chrono::high_resolution_clock::now();
     elapsed = end - start;
 
@@ -210,7 +210,6 @@ int setup_client(std::string ip, int seconds, int quantity, int sizeBytes)
     std::cout << "errores:" << (neg.load()) << std::endl;
     std::cout << "buenos:" << (quantity - neg.load()) << std::endl;
     std::cout << (quantity - neg.load())/(elapsed.count()/1000) << " p/s";
-
 
     return 0;
 }
@@ -221,6 +220,7 @@ int main(int ac, char* av[])
     bool client = false;
     int duration = 0;
     int quantity = 0;
+    int threads = 0;
     int sizeBytes = 0;
 
     try {
@@ -231,6 +231,7 @@ int main(int ac, char* av[])
             ("duration,d", po::value(&duration)->required(), "time of duration in seconds")
             ("client,c", po::bool_switch(&client), "client mode")
             ("quantity,q", po::value(&quantity), "quantity of pings")
+            ("threads,t", po::value(&threads), "quantity of main threads that divide work")
             ("sizeBytes,b", po::value(&sizeBytes), "payload in bytes")
             ;
 
@@ -256,7 +257,7 @@ int main(int ac, char* av[])
     }
 
     if (client)
-        return setup_client(server_ip, duration, quantity, sizeBytes);
+        return setup_client(server_ip, duration, quantity, sizeBytes, threads);
     else
         return setup_server(server_ip, duration);
 
