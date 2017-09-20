@@ -62,6 +62,15 @@ private:
             bond::bonded<PingRequest>,
             PingReply> call) override
     {
+        std::string key("req-id");
+        auto clientMetadata = call.context().client_metadata();
+        std::string reqId("unknown");
+        auto reqIdIter = clientMetadata.find(grpc::string_ref(key));
+        if (reqIdIter != std::end(clientMetadata))
+        {
+            reqId.assign(reqIdIter->second.cbegin(), reqIdIter->second.cend());;
+        }
+
         pos++;
         std::cerr << "receive:" << (pos.load()) << std::endl;
         // PingRequest request = call.request().Deserialize();
@@ -69,6 +78,7 @@ private:
         PingReply reply;
         reply.message = "ping " ;//+ request.name;
 
+        call.context().AddInitialMetadata(key, reqId);
         call.Finish(reply);
     }
 };
@@ -151,7 +161,9 @@ int setup_client(std::string ip, int seconds, int quantity, int sizeBytes, int t
     bond::CompactBinaryReader<bond::InputBuffer> reader(data);
     bond::bonded<PingRequest> bondedRequest(reader);
 
-    auto f_pinger = [bondedRequest, &quantity, &threads, &ip/* ,  &doublePing */, &neg/*, &sizeBytes*//* ,  &ioManager */,  &threadPool](/*const std::shared_ptr< ::grpc::ChannelInterface>& channel*/)
+    std::atomic<size_t> reqId{ 0 };
+
+    auto f_pinger = [bondedRequest, &quantity, &threads, &ip/* ,  &doublePing */, &neg/*, &sizeBytes*//* ,  &ioManager */,  &threadPool, &reqId](/*const std::shared_ptr< ::grpc::ChannelInterface>& channel*/)
     {
         auto ioManager = std::make_shared<io_manager>();
         auto channel = grpc::CreateChannel(ip + ":9143", grpc::InsecureChannelCredentials());
@@ -185,6 +197,8 @@ int setup_client(std::string ip, int seconds, int quantity, int sizeBytes, int t
 
         for (int i = 0; i < quantity/threads; i++) {
             std::shared_ptr< grpc::ClientContext> context(new grpc::ClientContext());
+            size_t myReqId = ++reqId;
+            context->AddMetadata("req-id", std::to_string(myReqId));
             context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
 
             doublePing.AsyncPing(context, bondedRequest, f_count);
