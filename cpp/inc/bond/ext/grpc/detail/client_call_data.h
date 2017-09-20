@@ -26,11 +26,18 @@
 #include <boost/assert.hpp>
 #include <boost/optional.hpp>
 
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <thread>
+#include <stdint.h>
 
 namespace bond { namespace ext { namespace gRPC { namespace detail {
+
+                extern std::atomic<size_t> totalDispatched;
+                extern std::atomic<size_t> okDispatched;
+                extern std::atomic<size_t> okRun;
+                extern std::atomic<size_t> errDispatched;
 
 /// @brief Implementation class that hold the state associated with
 /// outgoing unary calls.
@@ -51,7 +58,7 @@ struct client_unary_call_data
     std::shared_ptr<TThreadPool> _threadPool;
     /// A response reader.
     std::unique_ptr<grpc::ClientAsyncResponseReader<bond::bonded<TResponse>>> _responseReader;
-    /// The arguments to pass back into the client callback. Also doubles as 
+    /// The arguments to pass back into the client callback. Also doubles as
     /// storage for the response, status, and context.
     unary_call_result<TResponse> _callbackArgs;
     /// A pointer to ourselves used to keep us alive while waiting to receive
@@ -114,12 +121,19 @@ struct client_unary_call_data
                 // client_unary_call_data
                 _cb(std::shared_ptr<unary_call_result<TResponse>>(_self, &_callbackArgs));
                 clean_up_after_receive();
+
+                ++okRun;
             });
+
+            ++okDispatched;
         }
         else
         {
             clean_up_after_receive();
+            ++errDispatched;
         }
+
+        ++totalDispatched;
     }
 
     /// @brief Cleans up resources that are no longer needed after receiving

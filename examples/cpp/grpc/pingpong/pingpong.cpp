@@ -11,6 +11,7 @@
 #include <bond/ext/grpc/thread_pool.h>
 #include <bond/ext/grpc/unary_call.h>
 #include <bond/ext/grpc/wait_callback.h>
+#include <bond/ext/grpc/detail/client_call_data.h>
 
 #include <atomic>
 #include <chrono>
@@ -19,6 +20,15 @@
 #include <iostream>
 #include <memory>
 #include <string>
+
+namespace bond { namespace ext { namespace gRPC { namespace detail {
+
+extern std::atomic<size_t> totalDispatched {};
+extern std::atomic<size_t> okDispatched {};
+extern std::atomic<size_t> okRun {};
+extern std::atomic<size_t> errDispatched {};
+
+}}}}
 
 #pragma warning(disable: 4505)
 #include <boost/program_options.hpp>
@@ -181,7 +191,16 @@ int setup_client(std::string ip, int seconds, int quantity, int sizeBytes, int t
         }
 
         // busy loop until pos counter reaches the quantity per thread
-        test.wait();
+        while (!test.wait_for(std::chrono::seconds(5)))
+        {
+            std::cerr
+            << "Timeout waiting for test to finish."
+            << " Total dispatched: " << bond::ext::gRPC::detail::totalDispatched
+            << " OK dispatched: " << bond::ext::gRPC::detail::okDispatched
+            << " ERR dispatched: " << bond::ext::gRPC::detail::errDispatched
+            << " OK run: " << bond::ext::gRPC::detail::okRun
+            << std::endl;
+        }
         /*
         while (true)
         {
