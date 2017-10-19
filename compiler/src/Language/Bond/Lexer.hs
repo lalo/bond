@@ -34,20 +34,22 @@ module Language.Bond.Lexer
     , stringLiteral
     , symbol
     , whiteSpace
-    , ImportResolver
     , Environment(..)
+    , ImportResolver
     , Symbols(..)
+    , Parser
     ) where
 
+import Control.Monad.Reader
 import Control.Monad.State.Lazy
 import Data.List
 import Data.Void (Void)
-import Text.Megaparsec
-import qualified Text.Megaparsec.Char.Lexer as L
-import Text.Megaparsec.Char
-import Control.Monad.Reader
 import Language.Bond.Syntax.Types
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 
+-- parser state, mutable and global
 data Symbols =
     Symbols
     { symbols :: [Declaration]  -- list of structs, enums and aliases declared in the current and all imported files
@@ -68,20 +70,21 @@ data Environment =
     , resolveImport :: ImportResolver   -- imports resolver
     }
 
--- type Parser = Parsec Void String
--- type Parser a = ParsecT Void String (ReaderT Environment IO) a
 type Parser a = StateT Symbols (ParsecT Void String (ReaderT Environment IO)) a
 
+-- space consumer parser
 sc :: Parser ()
 sc = L.space space1 lineCmnt blockCmnt
   where
     lineCmnt  = L.skipLineComment "//"
     blockCmnt = L.skipBlockComment "/*" "*/"
 
+-- consume whitespace after every lexeme
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
-rws :: [String] -- list of reserved words
+-- list of reserved words
+rws :: [String]
 rws = [ "blob"
       , "bond_meta"
       , "bonded"
@@ -139,7 +142,7 @@ comma = symbol ","
 
 commaSep1 p = sepBy1 p comma
 
-decimal = lexeme L.decimal
+decimal = integer'
 
 identifier' :: [String] -> Parser String
 identifier' restricted = (lexeme . try) (p >>= check)

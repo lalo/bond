@@ -21,33 +21,22 @@ module Language.Bond.Parser
     )
     where
 
-import Control.Monad.State.Lazy
-import Data.Ord
-import Data.List
-import Data.Function
-import Data.Int
-import Data.Void (Void)
-import Data.Word
 import Control.Applicative
 import Control.Monad.Reader
-import Prelude
--- import Text.Megaparsec.Pos (initialPos)
-import Text.Megaparsec hiding (many, optional, (<|>))
-import Text.Megaparsec.Char (char)
+import Control.Monad.State.Lazy
+import Data.Function
+import Data.Int
+import Data.List
+import Data.Ord
+import Data.Void (Void)
+import Data.Word
 import Language.Bond.Lexer
+import Language.Bond.Syntax.Internal
 import Language.Bond.Syntax.Types
 import Language.Bond.Syntax.Util
-import Language.Bond.Syntax.Internal
-
--- parser state, mutable and global
--- data Symbols =
---     Symbols
---     { symbols :: [Declaration]  -- list of structs, enums and aliases declared in the current and all imported files
---     , imports :: [FilePath]     -- list of imported files
---     }
-
--- type Parser a = ParsecT String Symbols (ReaderT Environment IO) a
-type Parser a = StateT Symbols (ParsecT Void String (ReaderT Environment IO)) a
+import Prelude
+import Text.Megaparsec hiding (many, optional, (<|>))
+import Text.Megaparsec.Char (char)
 
 -- | Parses content of a schema definition file.
 parseBond ::
@@ -57,7 +46,6 @@ parseBond ::
  -> ImportResolver                      -- ^ function to resolve and load imported files
  -> IO (Either (ParseError Char Void) Bond)         -- ^ function returns 'Bond' which represents the parsed abstract syntax tree
                                         --   or 'ParserError' if parsing failed
--- parseBond s c f r = runReaderT (runParserT bond (Symbols [] []) s c) (Environment [] [] f r)
 parseBond s c f r = runReaderT (runParserT (evalStateT bond (Symbols [] [])) s c) (Environment [] [] f r)
 
 -- parser for .bond files
@@ -84,7 +72,6 @@ processImport :: Import -> Parser()
 processImport (Import file) = do
     Environment { currentFile = currentFile, resolveImport = resolveImport } <- ask
     (path, content) <- liftIO $ resolveImport currentFile file
-    -- let imports = []
     Symbols { imports = imports } <- get
     if path `elem` imports then return () else do
             modify (\u -> u { imports = path:imports } )
@@ -106,11 +93,9 @@ declaration = do
 
 updateSymbols :: Declaration -> Parser ()
 updateSymbols decl = do
-    -- (previous, symbols) <- partition (duplicateDeclaration decl) <$> symbols <$> getState
     (previous, symbols) <- partition (duplicateDeclaration decl) <$> symbols <$> get
     case reconcile previous decl of
         (False, _) -> fail $ "The " ++ showPretty decl ++ " has been previously defined as " ++ showPretty (head previous)
-        -- (True, f) -> modifyState (f symbols)
         (True, f) -> modify (f symbols)
   where
     reconcile [x@Forward {}] y@Struct {} = (paramsMatch x y, add y)
@@ -135,8 +120,6 @@ findSymbol name = doFind <?> "qualified name"
   where
     doFind = do
         namespaces <- asks currentNamespaces
-        -- let imports = []
-        -- let symbols = []
         Symbols { symbols = symbols } <- get
         case find (declMatching namespaces name) symbols of
             Just decl -> return decl
@@ -228,8 +211,6 @@ struct = do
     local (with params) $ Struct namespaces attr name params <$> base <*> fields <* optional semi
   where
     base = optional (colon *> userType <?> "base struct")
-    -- TODO SORT FIELDS
-    -- fields = unique $ braces $ manySortedBy (comparing fieldOrdinal) (field <* semi)
     fields = sortFields $ unique $ braces $ many (field <* semi)
     with params e = e { currentParams = params }
     sortFields p = do
@@ -415,8 +396,7 @@ payload = void_ <|> liftM Just userStruct
 checkUserType :: (Type -> Bool) -> Parser Type
 checkUserType check = do
     t <- userType
-    -- if (valid t) then return t else unexpected "type"
-    if (valid t) then return t else fail "type"
+    if (valid t) then return t else fail "unexpected type"
   where
     valid t = case t of
         BT_TypeParam _ -> True
@@ -424,9 +404,6 @@ checkUserType check = do
 
 findDuplicatesBy :: (Eq b) => (a -> b) -> [a] -> [a]
 findDuplicatesBy accessor xs = deleteFirstsBy ((==) `on` accessor) xs (nubBy ((==) `on` accessor) xs)
-
--- manySortedBy :: (a -> a -> Ordering) -> ParsecT s u m a -> ParsecT s u m [a]
--- manySortedBy = manyAccum . insertBy
 
 -- default type validator (type checking, out-of-range, enforce default type)
 validDefaultType :: Type -> Maybe Default -> Bool

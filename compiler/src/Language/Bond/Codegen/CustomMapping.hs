@@ -13,11 +13,11 @@ module Language.Bond.Codegen.CustomMapping
 
 import Control.Applicative
 import Data.Void (Void)
+import Language.Bond.Syntax.Types
 import Prelude
 import Text.Megaparsec hiding (many, optional, (<|>))
-import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char
-import Language.Bond.Syntax.Types
+import qualified Text.Megaparsec.Char.Lexer as L
 
 -- | Specification of a fragment of type alias mappings.
 data Fragment =
