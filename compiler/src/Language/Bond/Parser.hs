@@ -167,9 +167,9 @@ namespace :: Parser Namespace
 namespace = Namespace <$ keyword "namespace" <*> language <*> qualifiedName <* optional semi <?> "namespace declaration"
   where
     language = optional (keyword "cpp" *> pure Cpp
+                     <|> keyword "csharp" *> pure Cs
                      <|> keyword "cs" *> pure Cs
-                     <|> keyword "java" *> pure Java
-                     <|> keyword "csharp" *> pure Cs)
+                     <|> keyword "java" *> pure Java)
 
 -- identifier optionally qualified with namespace
 qualifiedName :: Parser QualifiedName
