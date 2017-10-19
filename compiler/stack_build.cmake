@@ -14,8 +14,7 @@ execute_process (
     COMMAND ${STACK_EXECUTABLE} setup
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     RESULT_VARIABLE error
-    OUTPUT_QUIET
-    ERROR_QUIET)
+    OUTPUT_QUIET)
 
 if (error)
     message (FATAL_ERROR)
