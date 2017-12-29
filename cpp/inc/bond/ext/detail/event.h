@@ -22,7 +22,7 @@ namespace bond { namespace ext { namespace detail {
     class event final
     {
     public:
-        explicit event()
+        event()
             : _m(),
               _cv(),
              _isSet(false)

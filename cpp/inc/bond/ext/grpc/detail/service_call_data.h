@@ -98,11 +98,13 @@ struct service_unary_call_data : io_manager_tag
                 // use C++14, we can simplify this by using lambda's
                 // capture-by-move.
                 auto receivedCall = boost::intrusive_ptr<uc_impl>{ _receivedCall.release() };
-
-                _threadPool->schedule([this, receivedCall]() mutable
+                auto cb = _cb;
+                auto callback = [cb, receivedCall]() mutable
                 {
-                    _cb(unary_call<TRequest, TResponse> { std::move(receivedCall) });
-                });
+                    cb(unary_call<TRequest, TResponse> { std::move(receivedCall) });
+                };
+                receivedCall.reset();
+                _threadPool->schedule(std::move(callback));
             }
 
             // create new state for the next request that will be received

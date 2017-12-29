@@ -6,6 +6,7 @@
 #include <bond/core/config.h>
 
 #include <bond/core/bonded.h>
+#include <bond/ext/detail/event.h>
 #include <bond/ext/grpc/detail/io_manager_tag.h>
 
 #ifdef _MSC_VER
@@ -94,7 +95,7 @@ namespace bond { namespace ext { namespace gRPC { namespace detail {
             bool wasResponseSent = _responseSentFlag.test_and_set();
             if (!wasResponseSent)
             {
-                _responder.Finish(msg, status, static_cast<void*>(this));
+                _responder.Finish(msg, status, static_cast<void*>(static_cast<io_manager_tag*>(this)));
             }
         }
 
@@ -103,7 +104,7 @@ namespace bond { namespace ext { namespace gRPC { namespace detail {
             bool wasResponseSent = _responseSentFlag.test_and_set();
             if (!wasResponseSent)
             {
-                _responder.FinishWithError(status, static_cast<void*>(this));
+                _responder.FinishWithError(status, static_cast<void*>(static_cast<io_manager_tag*>(this)));
             }
         }
 
@@ -183,13 +184,12 @@ namespace bond { namespace ext { namespace gRPC { namespace detail {
         grpc::ServerContext _context{};
         TRequest _request{};
         grpc::ServerAsyncResponseWriter<bond::bonded<TResponse>> _responder{ &_context };
-        std::atomic_flag _responseSentFlag{}; // Tracks whether any response has been sent yet.
+        std::atomic_flag _responseSentFlag = ATOMIC_FLAG_INIT; // Tracks whether any response has been sent yet.
         // The ref count intentionally starts at 1, because this instance
         // needs to keep itself alive until the response has finished being
         // sent, regardless of whether there are any outstanding user
         // references still alive.
         std::atomic<size_t> _refCount{ 1 };
-
     };
 
     /// @brief Detail class that helps implement \ref unary_call and \ref
@@ -236,7 +236,13 @@ namespace bond { namespace ext { namespace gRPC { namespace detail {
         /// honored.
         void Finish(const TResponse& msg, const grpc::Status& status = grpc::Status::OK)
         {
-            Finish(bond::bonded<TResponse>{ msg }, status);
+            try
+            {
+                Finish(bond::bonded<TResponse>{ msg }, status);
+            }
+            catch(const std::exception&)
+            {
+            }
         }
 
         /// @brief Responds to the client with the given message and status.

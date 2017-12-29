@@ -3,6 +3,7 @@ namespace pingpong;
 struct PingRequest
 {
     0: string name;
+    1: blob size;
 }
 
 struct PingReply
@@ -13,19 +14,4 @@ struct PingReply
 service DoublePing
 {
     PingReply Ping(PingRequest);
-
-    PingReply PingNoPayload();
-
-    nothing PingNoResponse(PingRequest);
-
-    void PingVoid();
-
-    nothing PingEventVoid();
-
-    PingReply PingShouldThrow(PingRequest);
-}
-
-service PingPong<RequestType>
-{
-    PingReply Ping(RequestType);
 }
