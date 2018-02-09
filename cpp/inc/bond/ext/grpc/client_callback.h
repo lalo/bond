@@ -7,8 +7,17 @@
 
 #include <bond/core/bonded.h>
 
+#ifdef _MSC_VER
+#pragma warning (push)
+#pragma warning (disable: 4100 4700)
+#endif
+
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/client_context.h>
+
+#ifdef _MSC_VER
+#pragma warning (pop)
+#endif
 
 #include <memory>
 #include <utility>

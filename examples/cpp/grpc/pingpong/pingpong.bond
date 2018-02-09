@@ -1,17 +1,13 @@
-namespace pingpong;
+namespace Ping
 
-struct PingRequest
+struct Data
 {
-    0: string name;
-    1: blob size;
-}
+	1: blob data;
+};
 
-struct PingReply
+service Perf
 {
-    0: string message;
-}
+	Data Invoke(Data);
+    nothing KillServer();
+};
 
-service DoublePing
-{
-    PingReply Ping(PingRequest);
-}

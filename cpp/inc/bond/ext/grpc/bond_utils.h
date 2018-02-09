@@ -10,6 +10,11 @@
 #include <bond/core/reflection.h>
 #include <bond/stream/output_buffer.h>
 
+#ifdef _MSC_VER
+    #pragma warning (push)
+    #pragma warning (disable: 4100 4700)
+#endif
+
 #include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/core_codegen.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
@@ -19,6 +24,10 @@
 #include <grpc++/support/slice.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
+
+#ifdef _MSC_VER
+    #pragma warning (pop)
+#endif
 
 #include <boost/assert.hpp>
 #include <boost/make_shared.hpp>

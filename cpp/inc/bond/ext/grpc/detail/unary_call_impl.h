@@ -6,7 +6,6 @@
 #include <bond/core/config.h>
 
 #include <bond/core/bonded.h>
-#include <bond/ext/detail/event.h>
 #include <bond/ext/grpc/detail/io_manager_tag.h>
 
 #ifdef _MSC_VER
@@ -229,13 +228,7 @@ namespace bond { namespace ext { namespace gRPC { namespace detail {
         /// honored.
         void Finish(const TResponse& msg, const grpc::Status& status = grpc::Status::OK)
         {
-            try
-            {
-                Finish(bond::bonded<TResponse>{ msg }, status);
-            }
-            catch(const std::exception&)
-            {
-            }
+            Finish(bond::bonded<TResponse>{ msg }, status);
         }
 
         /// @brief Responds to the client with the given message and status.
