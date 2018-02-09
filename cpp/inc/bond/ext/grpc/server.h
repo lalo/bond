@@ -115,9 +115,9 @@ namespace bond { namespace ext { namespace gRPC {
 private:
     server_core(
         std::unique_ptr<grpc::Server> grpcServer,
-        std::unique_ptr<grpc::ServerCompletionQueue> cq)
+        std::vector<std::unique_ptr<grpc::CompletionQueue>> cqs)
         : _grpcServer(std::move(grpcServer)),
-          _ioManager(std::move(cq))
+          _ioManager(std::move(cqs), 4)
     {
         BOOST_ASSERT(_grpcServer);
     }

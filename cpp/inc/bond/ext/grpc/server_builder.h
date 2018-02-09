@@ -180,27 +180,36 @@ namespace bond { namespace ext { namespace gRPC {
         /// Return a running server which is ready for processing calls.
         std::unique_ptr<bond::ext::gRPC::server_core<TThreadPool>> BuildAndStart()
         {
-            std::unique_ptr<grpc::ServerCompletionQueue> cq =
-                _grpcServerBuilder.AddCompletionQueue();
-            std::unique_ptr<grpc::Server> server =
-                _grpcServerBuilder.BuildAndStart();
+            std::vector<std::unique_ptr<grpc::CompletionQueue>> cqs;
+
+            for (size_t i = 0; i < 4; i++)
+            {
+                std::unique_ptr<grpc::ServerCompletionQueue> cq{ _grpcServerBuilder.AddCompletionQueue() };
+                cqs.push_back(std::move(cq));
+            }
 
             if (!_threadPool)
             {
                 _threadPool = std::make_shared<TThreadPool>();
             }
 
+            std::unique_ptr<grpc::Server> server =
+                _grpcServerBuilder.BuildAndStart();
+
             // Tickle all the services so they queue a receive for all their
             // methods.
             for (auto& service : _services)
             {
-                service->start(cq.get(), _threadPool);
+                for (auto& cq : cqs)
+                {
+                    service->start(static_cast<grpc::ServerCompletionQueue*>(cq.get()), _threadPool);
+                }
             }
 
             std::unique_ptr<bond::ext::gRPC::server_core<TThreadPool>> result {
                 new bond::ext::gRPC::server_core<TThreadPool> {
                     std::move(server),
-                    std::move(cq) } };
+                    std::move(cqs) } };
 
             return result;
         }

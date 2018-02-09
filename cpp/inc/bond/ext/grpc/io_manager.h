@@ -51,14 +51,15 @@ namespace bond { namespace ext { namespace gRPC {
         /// USE_HARDWARE_CONC, then a number of threads depending on the
         /// hardware's available concurrency will be started.
         explicit io_manager(size_t numThreads = USE_HARDWARE_CONC)
-            : _cq(new grpc::CompletionQueue),
+            : _cqs(),
               _numThreads(compute_real_num_threads(numThreads)),
               _threads(),
               _isShutdownRequested(),
               _isShutdownInProgress(),
               _shutdownCompleted()
         {
-            BOOST_ASSERT(_cq);
+            //BOOST_ASSERT(_cq);
+            _cqs.push_back(std::make_unique<grpc::CompletionQueue>());
             start();
         }
 
@@ -69,15 +70,15 @@ namespace bond { namespace ext { namespace gRPC {
         /// @param numThreads the number of threads to start. If \ref
         /// USE_HARDWARE_CONC, then a number of threads depending on the
         /// hardware's available concurrency will be started.
-        explicit io_manager(std::unique_ptr<grpc::CompletionQueue> cq, size_t numThreads = USE_HARDWARE_CONC)
-            : _cq(std::move(cq)),
+        explicit io_manager(std::vector<std::unique_ptr<grpc::CompletionQueue>> cqs, size_t numThreads = USE_HARDWARE_CONC)
+            : _cqs(std::move(cqs)),
               _numThreads(compute_real_num_threads(numThreads)),
               _threads(),
               _isShutdownRequested(),
               _isShutdownInProgress(),
               _shutdownCompleted()
         {
-            BOOST_ASSERT(_cq);
+            //BOOST_ASSERT(_cqs);
             start();
         }
 
@@ -87,14 +88,16 @@ namespace bond { namespace ext { namespace gRPC {
         /// USE_HARDWARE_CONC, then a number of threads depending on the
         /// hardware's available concurrency will be started.
         io_manager(size_t numThreads, delay_start_tag)
-            : _cq(new grpc::CompletionQueue),
+            : _cqs(),
               _numThreads(compute_real_num_threads(numThreads)),
               _threads(),
               _isShutdownRequested(),
               _isShutdownInProgress(),
               _shutdownCompleted()
         {
-            BOOST_ASSERT(_cq);
+            //BOOST_ASSERT(_cq);
+            _cqs.push_back(std::make_unique<grpc::CompletionQueue>());
+            //_cqs.push_back(std::unique_ptr<grpc::CompletionQueue> { new grpc::CompletionQueue });
 
             // this overload does NOT call start()
         }
@@ -106,15 +109,15 @@ namespace bond { namespace ext { namespace gRPC {
         /// @param numThreads the number of threads to start. If \ref
         /// USE_HARDWARE_CONC, then a number of threads depending on the
         /// hardware's available concurrency will be started.
-        io_manager(std::unique_ptr<grpc::CompletionQueue> cq, size_t numThreads, delay_start_tag)
-            : _cq(std::move(cq)),
+        io_manager(std::vector<std::unique_ptr<grpc::CompletionQueue>> cqs, size_t numThreads, delay_start_tag)
+            : _cqs(std::move(cqs)),
               _numThreads(compute_real_num_threads(numThreads)),
               _threads(),
               _isShutdownRequested(),
               _isShutdownInProgress(),
               _shutdownCompleted()
         {
-            BOOST_ASSERT(_cq);
+            //BOOST_ASSERT(_cq);
 
             // this overload does NOT call start()
         }
@@ -132,7 +135,7 @@ namespace bond { namespace ext { namespace gRPC {
         /// io_manager.
         grpc::CompletionQueue* cq()
         {
-            return _cq.get();
+            return _cqs[0].get();
         }
 
         /// @brief Starts polling the completion queue.
@@ -144,7 +147,7 @@ namespace bond { namespace ext { namespace gRPC {
         /// shutdown.
         void start()
         {
-            BOOST_ASSERT(_cq);
+            //BOOST_ASSERT(_cq);
 
             if (_threads.empty())
             {
@@ -152,11 +155,11 @@ namespace bond { namespace ext { namespace gRPC {
 
                 for (size_t i = 0; i < _numThreads; ++i)
                 {
-                    _threads.emplace_back([this]()
+                    _threads.emplace_back([this, i]()
                     {
                         void* tag;
                         bool ok;
-                        while (_cq->Next(&tag, &ok))
+                        while (_cqs[i % _cqs.size()]->Next(&tag, &ok))
                         {
                             BOOST_ASSERT(tag);
                             static_cast<detail::io_manager_tag*>(tag)->invoke(ok);
@@ -177,7 +180,8 @@ namespace bond { namespace ext { namespace gRPC {
             bool shouldRequest = !_isShutdownRequested.test_and_set();
             if (shouldRequest)
             {
-                _cq->Shutdown();
+                for (auto& cq : _cqs)
+                    cq->Shutdown();
             }
         }
 
@@ -207,7 +211,9 @@ namespace bond { namespace ext { namespace gRPC {
 
                 _threads.clear();
 
-                _cq.reset();
+                for (auto& cq : _cqs)
+                    cq.reset();
+                //_cq.reset();
                 _shutdownCompleted.set();
             }
             else
@@ -231,7 +237,8 @@ namespace bond { namespace ext { namespace gRPC {
             return numThreads != 0 ? numThreads : recourseNumThreads;
         }
 
-        std::unique_ptr<grpc::CompletionQueue> _cq;
+        //std::unique_ptr<grpc::CompletionQueue> _cq;
+        std::vector<std::unique_ptr<grpc::CompletionQueue>> _cqs;
         size_t _numThreads;
         std::vector<std::thread> _threads;
 
