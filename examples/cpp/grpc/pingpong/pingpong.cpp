@@ -7,6 +7,7 @@
 #include <boost/program_options.hpp>
 #pragma warning(pop)
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/thread/tss.hpp>
 
 #include <bond/ext/grpc/io_manager.h>
 #include <bond/ext/grpc/server.h>
@@ -218,6 +219,47 @@ private:
     std::shared_ptr<bond::ext::gRPC::io_manager> ioManager = std::make_shared<bond::ext::gRPC::io_manager>();
 };
 
+template <typename T>
+class combinable
+{
+public:
+    T& local()
+    {
+        if (auto current = tsp.get())
+            return *current;
+
+        T* temp = new T;
+        {
+            std::lock_guard<std::mutex> guard(m);
+            instances.push_back(temp);
+        }
+
+        tsp.reset(temp);
+
+        return *temp;
+    }
+
+    template<typename Func>
+    void combine_each(Func&& f)
+    {
+        {
+            std::lock_guard<std::mutex> guard(m);
+            for (auto i : instances)
+            {
+                f(*i);
+            }
+        }
+    }
+
+private:
+    boost::thread_specific_ptr<T> tsp;
+    std::mutex m;
+    std::vector<T*> instances;
+
+    //combine_each
+    //local
+
+};
 
 template <typename T>
 class BasicObjectPool
@@ -327,7 +369,8 @@ public:
         request.data = bond::blob{ buffer.get(), static_cast<std::uint32_t>(m_options.GetPayoad()) };
 
         using Latencies = std::vector<std::chrono::microseconds>;
-        using CombinableLatencies = concurrency::combinable<Latencies>;
+        //using CombinableLatencies = concurrency::combinable<Latencies>;
+        using CombinableLatencies = combinable<Latencies>;
 
         auto latencies = std::make_shared<CombinableLatencies>();
         auto failed = std::make_shared<std::atomic_size_t>(0);
@@ -506,12 +549,15 @@ public:
             t.join();
         }
 
+        
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+
         Latencies l;
 
         {
-            auto latenciesCopy = *latencies;
-            latencies.reset();
-            latenciesCopy.combine_each([&l](auto& v) { l.insert(l.end(), v.begin(), v.end()); });
+            //auto latenciesCopy = *latencies;
+            //latencies.reset();
+            latencies->combine_each([&l](auto& v) { l.insert(l.end(), v.begin(), v.end()); });
 
             std::sort(l.begin(), l.end());
         }
